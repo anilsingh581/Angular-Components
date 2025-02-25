@@ -1,0 +1,421 @@
+// Example 1: Custom Highlight Directive
+
+// app.ts
+import { Component, Directive, Input, HostListener, HostBinding, ElementRef, Renderer2, TemplateRef, ViewContainerRef, OnInit, OnDestroy } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { FormsModule, NG_VALIDATORS, Validator, AbstractControl, ValidationErrors } from '@angular/forms';
+import { Subscription, fromEvent } from 'rxjs';
+
+// Custom Highlight Directive
+@Directive({
+  selector: '[appHighlight]',
+  standalone: true
+})
+export class HighlightDirective {
+  constructor(private el: ElementRef, private renderer: Renderer2) {}
+
+  @HostListener('mouseenter') onMouseEnter() {
+    this.renderer.setStyle(this.el.nativeElement, 'backgroundColor', 'yellow');
+  }
+
+  @HostListener('mouseleave') onMouseLeave() {
+    this.renderer.removeStyle(this.el.nativeElement, 'backgroundColor');
+  }
+}
+
+
+
+// Example 2: Basic Custom Directive
+@Directive({
+  selector: '[appCustomDirective]',
+  standalone: true
+})
+export class CustomDirective implements OnInit {
+  ngOnInit() {
+    console.log('Custom directive initialized');
+  }
+}
+
+
+
+// Example 3: Text Color Directive with ElementRef
+@Directive({
+  selector: '[appTextColor]',
+  standalone: true
+})
+export class TextColorDirective {
+  constructor(private el: ElementRef) {
+    this.el.nativeElement.style.color = 'blue';
+  }
+}
+
+
+
+// Example 4: Font Size Directive with Renderer2
+@Directive({
+  selector: '[appFontSize]',
+  standalone: true
+})
+export class FontSizeDirective {
+  constructor(private el: ElementRef, private renderer: Renderer2) {
+    this.renderer.setStyle(this.el.nativeElement, 'font-size', '20px');
+  }
+}
+
+
+
+// Example 5: Click Event Listener Directive
+@Directive({
+  selector: '[appClick]',
+  standalone: true
+})
+export class ClickDirective {
+  constructor(private el: ElementRef) {}
+
+  @HostListener('click') onClick() {
+    alert('Element clicked!');
+  }
+}
+
+
+
+// Example 6: Hover Highlight Directive
+@Directive({
+  selector: '[appHoverHighlight]',
+  standalone: true
+})
+export class HoverHighlightDirective {
+  constructor(private el: ElementRef, private renderer: Renderer2) {}
+
+  @HostListener('mouseenter') onMouseEnter() {
+    this.renderer.setStyle(this.el.nativeElement, 'backgroundColor', 'lightgray');
+  }
+
+  @HostListener('mouseleave') onMouseLeave() {
+    this.renderer.removeStyle(this.el.nativeElement, 'backgroundColor');
+  }
+}
+
+
+
+// Example 7: Border Toggle Directive with HostBinding
+@Directive({
+  selector: '[appBorderToggle]',
+  standalone: true
+})
+export class BorderToggleDirective {
+  @HostBinding('class.border-highlight') isHighlighted = false;
+
+  @HostListener('mouseover') onMouseOver() {
+    this.isHighlighted = true;
+  }
+
+  @HostListener('mouseleave') onMouseLeave() {
+    this.isHighlighted = false;
+  }
+}
+
+
+
+// Example 8: Custom Highlight with Input
+@Directive({
+  selector: '[appCustomHighlight]',
+  standalone: true
+})
+export class CustomHighlightDirective implements OnInit {
+  @Input('appCustomHighlight') highlightColor = 'yellow';
+
+  constructor(private el: ElementRef, private renderer: Renderer2) {}
+
+  ngOnInit() {
+    this.renderer.setStyle(this.el.nativeElement, 'backgroundColor', this.highlightColor);
+  }
+}
+
+
+
+// Example 9: Click Tracker with Output
+@Directive({
+  selector: '[appClickTracker]',
+  standalone: true
+})
+export class ClickTrackerDirective {
+  @HostListener('click') onClick() {
+    console.log('Tracked click event');
+  }
+}
+
+
+
+// Example 10: AutoFocus Directive (Angular 18+)
+@Directive({
+  selector: '[appAutoFocus]',
+  standalone: true
+})
+export class AutoFocusDirective implements OnInit {
+  constructor(private el: ElementRef, private renderer: Renderer2) {}
+
+  ngOnInit() {
+    this.renderer.setAttribute(this.el.nativeElement, 'autofocus', 'true');
+  }
+}
+
+
+
+// Example 11: Hydration Directive (Angular 20)
+@Directive({
+  selector: '[appHydrate]',
+  standalone: true
+})
+export class HydrateDirective implements OnInit {
+  constructor(private el: ElementRef) {}
+
+  ngOnInit() {
+    console.log('Hydrated:', this.el.nativeElement);
+  }
+}
+
+
+
+// Example 12: Custom Structural Unless Directive
+@Directive({
+  selector: '[appUnless]',
+  standalone: true
+})
+export class UnlessDirective {
+  @Input() set appUnless(condition: boolean) {
+    if (!condition) {
+      this.viewContainer.createEmbeddedView(this.templateRef);
+    } else {
+      this.viewContainer.clear();
+    }
+  }
+
+  constructor(private templateRef: TemplateRef<any>, private viewContainer: ViewContainerRef) {}
+}
+
+
+// Example 13: Event Cleanup Directive
+@Directive({
+  selector: '[appEventCleanup]',
+  standalone: true
+})
+export class EventCleanupDirective implements OnDestroy {
+  private subscription: Subscription;
+
+  constructor(private el: ElementRef) {
+    this.subscription = fromEvent(this.el.nativeElement, 'click').subscribe(() => {
+      console.log('Clicked');
+    });
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+  }
+}
+
+
+// Example 14: Email Validator Directive for Reactive Forms
+@Directive({
+  selector: '[appEmailValidator]',
+  standalone: true,
+  providers: [{ provide: NG_VALIDATORS, useExisting: EmailValidatorDirective, multi: true }]
+})
+export class EmailValidatorDirective implements Validator {
+  validate(control: AbstractControl): ValidationErrors | null {
+    return control.value?.includes('@') ? null : { invalidEmail: true };
+  }
+}
+
+
+// Example 15: Tooltip Directive
+@Directive({
+  selector: '[appTooltip]',
+  standalone: true
+})
+export class TooltipDirective {
+  @Input() tooltipText: string = '';
+
+  constructor(private el: ElementRef, private renderer: Renderer2) {}
+
+  @HostListener('mouseenter') onMouseEnter() {
+    const tooltip = this.renderer.createElement('span');
+    this.renderer.appendChild(this.el.nativeElement, tooltip);
+    this.renderer.setProperty(tooltip, 'innerText', this.tooltipText);
+    this.renderer.setStyle(tooltip, 'position', 'absolute');
+    this.renderer.setStyle(tooltip, 'background', 'gray');
+    this.renderer.setStyle(tooltip, 'color', 'white');
+    this.renderer.setStyle(tooltip, 'padding', '2px 5px');
+  }
+
+  @HostListener('mouseleave') onMouseLeave() {
+    const tooltip = this.el.nativeElement.querySelector('span');
+    if (tooltip) this.renderer.removeChild(this.el.nativeElement, tooltip);
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    FormsModule,
+    HighlightDirective,
+    CustomDirective,
+    TextColorDirective,
+    FontSizeDirective,
+    ClickDirective,
+    HoverHighlightDirective,
+    BorderToggleDirective,
+    CustomHighlightDirective,
+    ClickTrackerDirective,
+    AutoFocusDirective,
+    HydrateDirective,
+    UnlessDirective,
+    EventCleanupDirective,
+    EmailValidatorDirective,
+    TooltipDirective
+  ],
+  template: `
+    <h1>Angular Directives Demo</h1>
+
+    <!-- Example : *ngIf -->
+    <p *ngIf="isLoggedIn">Welcome, User!</p>
+    <button (click)="toggleLogin()">Toggle Login</button>
+
+    <!-- Example: *ngFor -->
+    <ul>
+      <li *ngFor="let item of items; let i = index; trackBy: trackByIndex">
+        {{ i + 1 }}. {{ item }}
+      </li>
+    </ul>
+
+    <!-- Example: *ngSwitch -->
+    <div [ngSwitch]="role">
+      <p *ngSwitchCase="'admin'">Admin Panel</p>
+      <p *ngSwitchCase="'user'">User Dashboard</p>
+      <p *ngSwitchDefault>Select a Role</p>
+    </div>
+    <button (click)="role = 'admin'">Admin</button>
+    <button (click)="role = 'user'">User</button>
+    <button (click)="role = ''">Reset</button>
+
+    <!-- Example: ngClass -->
+    <p [ngClass]="{'active': isActive, 'disabled': !isActive}">Status</p>
+    <button (click)="toggle()">Toggle Class</button>
+
+    <!-- Example: ngStyle -->
+    <p [ngStyle]="{'color': isActive ? 'green' : 'red'}">Dynamic Text</p>
+
+    <!-- Example: ng-template and ng-container -->
+    <ng-template #message>
+      <p>This is a hidden message</p>
+    </ng-template>
+    <button (click)="showMessage = true">Show Message</button>
+    <ng-container *ngIf="showMessage">
+      <ng-container *ngTemplateOutlet="message"></ng-container>
+    </ng-container>
+
+    <!-- Example: Custom Highlight -->
+    <p appHighlight>Hover over me to highlight!</p>
+
+    <!-- Example: Basic Custom Directive -->
+    <p appCustomDirective>Text with custom directive</p>
+
+    <!-- Example: Text Color -->
+    <p appTextColor>Blue text via ElementRef</p>
+
+    <!-- Example: Font Size -->
+    <p appFontSize>Large text via Renderer2</p>
+
+    <!-- Example: Click Event -->
+    <button appClick>Click Me for Alert</button>
+
+    <!-- Example: Hover Highlight -->
+    <p appHoverHighlight>Hover for gray background</p>
+
+    <!-- Example : Border Toggle -->
+    <p appBorderToggle>Hover for border effect</p>
+
+    <!-- Example: Custom Highlight with Input -->
+    <p appCustomHighlight="lightblue">Light blue background</p>
+
+    <!-- Example: Click Tracker -->
+    <button appClickTracker>Track This Click</button>
+
+    <!-- Example: AutoFocus -->
+    <input appAutoFocus placeholder="Auto-focused input" />
+
+    <!-- Example: @if (Angular 19+) -->
+    @if (isLoggedIn) {
+      <p>Welcome back via @if!</p>
+    } @else {
+      <p>Please log in via @if</p>
+    }
+
+    <!-- Example: @for (Angular 19+) -->
+    <ul>
+      @for (item of items; track item) {
+        <li>{{ item }}</li>
+      }
+    </ul>
+
+    <!-- Example: @switch (Angular 19+) -->
+    @switch (role) {
+      @case ('admin') {
+        <p>Admin Dashboard via @switch</p>
+      }
+      @case ('user') {
+        <p>User Dashboard via @switch</p>
+      }
+      @default {
+        <p>Guest View via @switch</p>
+      }
+    }
+
+    <!-- Example: Hydration -->
+    <p appHydrate>Hydrated Element</p>
+
+    <!-- Example: Custom Unless Directive -->
+    <p *appUnless="isLoggedIn">You are not logged in (Unless)</p>
+
+    <!-- Example: Event Cleanup -->
+    <button appEventCleanup>Click Me (with cleanup)</button>
+
+    <!-- Example: Email Validator -->
+    <input [(ngModel)]="email" appEmailValidator placeholder="Enter email" />
+    <p *ngIf="email && !email.includes('@')">Invalid email</p>
+
+    <!-- Example: Tooltip -->
+    <p appTooltip tooltipText="Hello, Tooltip!">Hover for tooltip</p>
+  `,
+  styles: [`
+    .active { background-color: lightgreen; }
+    .disabled { background-color: lightgray; }
+    .border-highlight { border: 2px solid red; }
+  `]
+})
+export class AppComponent {
+  isLoggedIn = false;
+  items = ['Apple', 'Banana', 'Orange'];
+  role = '';
+  isActive = false;
+  showMessage = false;
+  email = '';
+
+  toggleLogin() {
+    this.isLoggedIn = !this.isLoggedIn;
+  }
+
+  toggle() {
+    this.isActive = !this.isActive;
+  }
+
+  trackByIndex(index: number) {
+    return index;
+  }
+}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
