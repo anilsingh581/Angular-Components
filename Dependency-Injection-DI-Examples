@@ -1,0 +1,302 @@
+
+// Dependency Injection (DI) Examples
+
+// Example 1: Basic DI with LoggerService
+
+// app.ts
+import { Component, Injectable, InjectionToken, Injector, Inject, Optional, NgModule, forwardRef } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+
+//Basic DI with LoggerService
+@Injectable({ providedIn: 'root' })
+export class LoggerService {
+  log(message: string) {
+    console.log(`[Logger]: ${message}`);
+  }
+}
+
+@Component({
+  selector: 'app-home',
+  standalone: true,
+  template: `
+    <h2>Home Component</h2>
+    <button (click)="logMessage()">Log Message</button>
+  `
+})
+export class HomeComponent {
+  constructor(private loggerService: LoggerService) {} // Example 1: Constructor Injection
+
+  logMessage() {
+    this.loggerService.log('Button clicked!');
+  }
+}
+
+
+
+// Example 2:  (Standalone): Standalone Component with DI
+@Component({
+  selector: 'app-standalone',
+  standalone: true,
+  template: `
+    <h2>Standalone Component</h2>
+    <button (click)="logMessage()">Log</button>
+  `,
+  providers: [LoggerService]
+})
+export class StandaloneComponent {
+  private loggerService = inject(LoggerService); // Example 1: inject()
+
+  logMessage() {
+    this.loggerService.log('Standalone Component Log');
+  }
+}
+
+
+// Example 3: Injectable with providedIn: 'root'
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  getData() {
+    return 'Hello from DataService!';
+  }
+}
+
+
+
+// Example 4: providedIn: 'any'
+@Injectable({ providedIn: 'any' })
+export class AuthService {
+  isAuthenticated = false;
+
+  toggleAuth() {
+    this.isAuthenticated = !this.isAuthenticated;
+  }
+}
+
+
+
+// Example 5: Injector Usage
+@Component({
+  selector: 'app-injector-example',
+  standalone: true,
+  template: `
+    <h2>Injector Example</h2>
+    <button (click)="logData()">Log Data</button>
+  `
+})
+export class InjectorExampleComponent {
+  constructor(private injector: Injector) {}
+
+  logData() {
+    const dataService = this.injector.get(DataService); // Example 5
+    console.log(dataService.getData());
+  }
+}
+
+
+
+// Example 6: Hierarchical DI
+@Component({
+  selector: 'app-child',
+  standalone: true,
+  template: `
+    <h2>Child Component</h2>
+    <p>Data: {{ dataService.getData() }}</p>
+  `,
+  providers: [DataService] // Example 6: Component-level provider
+})
+export class ChildComponent {
+  constructor(private dataService: DataService) {}
+}
+
+
+
+// Example 7: @Inject with InjectionToken
+export const API_URL = new InjectionToken<string>('API_URL');
+
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  constructor(@Inject(API_URL) private apiUrl: string) { // Example 10
+    console.log('API URL:', this.apiUrl);
+  }
+
+  getUrl() {
+    return this.apiUrl;
+  }
+}
+
+
+// Example 8: Multi-Providers
+export const MULTI_SERVICE = new InjectionToken<string[]>('MULTI_SERVICE');
+
+@Injectable({ providedIn: 'root' })
+export class ServiceA {
+  getData() { return 'ServiceA Data'; }
+}
+
+@Injectable({ providedIn: 'root' })
+export class ServiceB {
+  getData() { return 'ServiceB Data'; }
+}
+
+
+
+// Example 9: Abstract Class with DI
+export abstract class AbstractLoggerService {
+  abstract log(message: string): void;
+}
+
+@Injectable({ providedIn: 'root' })
+export class ConsoleLoggerService extends AbstractLoggerService {
+  log(message: string) { console.log('Console Logger:', message); } // Example 12
+}
+
+
+// Example 10: Token-Based Provider
+export const CONFIG = new InjectionToken<{ apiUrl: string }>('config');
+
+
+
+// Example 11: Factory Provider
+export function apiServiceFactory(logger: LoggerService) {
+  return new ApiService(logger); // Example 17
+}
+
+@Injectable({ providedIn: 'root' })
+export class FactoryApiService {
+  constructor(private logger: LoggerService, @Inject(API_URL) private apiUrl: string) {}
+
+  logUrl() {
+    this.logger.log(`Factory API URL: ${this.apiUrl}`);
+  }
+}
+
+
+
+// Example 12: Optional Dependency
+@Component({
+  selector: 'app-optional-example',
+  standalone: true,
+  template: `
+    <h2>Optional Dependency</h2>
+    <p>{{ logger ? 'Logger available' : 'No logger' }}</p>
+  `
+})
+export class OptionalExampleComponent {
+  constructor(@Optional() private logger?: LoggerService) {} // Example 18
+}
+
+
+
+// Example 13: DI in Standalone Component
+@Component({
+  selector: 'app-standalone-di',
+  standalone: true,
+  template: `
+    <h2>Standalone DI</h2>
+    <p>Data: {{ dataService.getData() }}</p>
+  `,
+  providers: [DataService] // Example 27
+})
+export class StandaloneDiComponent {
+  private dataService = inject(DataService);
+}
+
+
+
+// Example 14: Override Service at Component Level
+@Injectable({ providedIn: 'root' })
+export class RealDataService {
+  getData() { return 'Real Data'; }
+}
+
+@Injectable()
+export class MockDataService {
+  getData() { return 'Mock Data'; }
+}
+
+@Component({
+  selector: 'app-override-example',
+  standalone: true,
+  template: `
+    <h2>Override Example</h2>
+    <p>Data: {{ dataService.getData() }}</p>
+  `,
+  providers: [{ provide: RealDataService, useClass: MockDataService }] // Example 30
+})
+export class OverrideExampleComponent {
+  constructor(private dataService: RealDataService) {}
+}
+
+
+
+// Example 15: Circular Dependency Handling
+@Injectable({ providedIn: 'root' })
+export class ServiceOne {
+  constructor(@Inject(forwardRef(() => ServiceTwo)) private serviceTwo: ServiceTwo) {}
+}
+
+@Injectable({ providedIn: 'root' })
+export class ServiceTwo {
+  constructor(@Inject(forwardRef(() => ServiceOne)) private serviceOne: ServiceOne) {}
+}
+
+
+
+// Example 16: Injection Context with inject()
+@Component({
+  selector: 'app-context-example',
+  standalone: true,
+  template: `
+    <h2>Injection Context</h2>
+    <button (click)="logMessage()">Log</button>
+  `,
+  providers: [LoggerService]
+})
+export class ContextExampleComponent {
+  private loggerService = inject(LoggerService); // Example 38a
+
+  logMessage() {
+    this.loggerService.log('Context Example Log');
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    HomeComponent,
+    StandaloneComponent,
+    InjectorExampleComponent,
+    ChildComponent,
+    OptionalExampleComponent,
+    StandaloneDiComponent,
+    OverrideExampleComponent,
+    ContextExampleComponent
+  ],
+  template: `
+    <h1>Angular Dependency Injection Demo</h1>
+    <app-home></app-home>
+    <app-standalone></app-standalone>
+    <app-injector-example></app-injector-example>
+    <app-child></app-child>
+    <app-optional-example></app-optional-example>
+    <app-standalone-di></app-standalone-di>
+    <app-override-example></app-override-example>
+    <app-context-example></app-context-example>
+  `,
+  providers: [
+    { provide: API_URL, useValue: 'https://api.example.com' }, // Example 10 & 13
+    { provide: MULTI_SERVICE, useClass: ServiceA, multi: true }, // Example 11
+    { provide: MULTI_SERVICE, useClass: ServiceB, multi: true }, // Example 11
+    { provide: AbstractLoggerService, useClass: ConsoleLoggerService }, // Example 12
+    { provide: CONFIG, useValue: { apiUrl: 'https://config.example.com' } }, // Example 13
+    { provide: FactoryApiService, useFactory: apiServiceFactory, deps: [LoggerService] } // Example 17
+  ]
+})
+export class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
