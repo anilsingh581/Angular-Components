@@ -1,0 +1,184 @@
+// Compiler & Build Tools Examples
+
+//Example 1: Mock Service for Data
+
+// app.ts
+import { Component, NgModule, ChangeDetectionStrategy } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { RouterModule, Routes } from '@angular/router';
+import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+
+// Mock Service for Data
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  constructor(private http: HttpClient) {}
+
+  getData(): Observable<any> {
+    return this.http.get('https://api.example.com/data'); // Mocked for demo
+  }
+}
+
+
+// Example 1: Basic Angular Compiler Usage
+
+@Component({
+  selector: 'app-hello',
+  template: '<h1>Hello World</h1>' // Example 1
+})
+export class HelloComponent {}
+
+
+// Example 2: JIT Compilation (Development Mode Implicitly Shown)
+
+@Component({
+  selector: 'app-jit-demo',
+  template: `
+    <h2>JIT Demo</h2>
+    <p>Rendered in browser at runtime</p>
+  `
+})
+export class JITDemoComponent {}
+
+
+// Example 3: Ivy Compiler Optimization with Templates
+
+@Component({
+  selector: 'app-ivy-optimize',
+  changeDetection: ChangeDetectionStrategy.OnPush, 
+  template: `
+    <h2>Ivy Optimized Component</h2>
+    <div>{{ user.name.toUpperCase() }}</div> 
+  `
+})
+export class IvyOptimizeComponent {
+  user = { name: 'Angular' };
+}
+
+
+// Example 4: Entry Component (Mocked as Standalone for Simplicity)
+
+@Component({
+  selector: 'app-modal',
+  standalone: true,
+  template: `
+    <h2>Modal Component</h2>
+    <div>Modal content</div>
+  `
+})
+export class ModalComponent {}
+
+
+// Example 5: Lazy Loading Demo
+
+@Component({
+  selector: 'app-lazy-demo',
+  template: `
+    <h2>Lazy Loading Demo</h2>
+    <p>This would typically be in a lazy-loaded module</p>
+  `
+})
+export class LazyDemoComponent {}
+
+// Root NgModule (AppModule)
+@NgModule({
+  declarations: [
+    HelloComponent,
+    JITDemoComponent,
+    IvyOptimizeComponent,
+    LazyDemoComponent
+  ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    HttpClientModule,
+    RouterModule.forRoot([
+      { path: 'hello', component: HelloComponent },
+      { path: 'jit', component: JITDemoComponent },
+      { path: 'ivy', component: IvyOptimizeComponent },
+      // Example 24: Simulated lazy loading (real lazy loading requires separate module)
+      { path: 'lazy', component: LazyDemoComponent },
+      { path: '', redirectTo: '/hello', pathMatch: 'full' }
+    ])
+  ],
+  providers: [
+    DataService,
+    { provide: HttpClient, useValue: { get: () => of('Mock Data') } } // Mock HttpClient
+  ],
+  bootstrap: [HelloComponent]
+})
+export class AppModule {}
+
+// Bootstrap the Application
+bootstrapApplication(HelloComponent, {
+  providers: [
+    provideRouter([]), // Router is already provided by AppModule
+    DataService
+  ]
+}).catch(err => console.error(err));
+
+// Mock Build Configurations (Not Executable Here, For Reference)
+
+// Example 6: AOT Compilation and ng build --prod
+
+// Terminal command: ng build --prod
+// This would use AOT to compile templates into efficient JavaScript.
+
+// Example 7: ngc Command
+
+// Terminal command: ngc --project tsconfig.app.json
+// This compiles the app with AOT.
+
+// Example 8: Production vs Development Builds
+
+// Terminal commands:
+// ng build --prod  // Production build with AOT and optimizations
+// ng serve         // Development build with JIT
+
+// Example 9: Build Size Analysis
+
+// Terminal commands:
+// ng build --prod --stats-json
+// webpack-bundle-analyzer dist/your-app/stats.json
+
+
+// Example 10: angular.json Configuration (Simplified Mock)
+
+const mockAngularJson = {
+  "projects": {
+    "your-app": {
+      "architect": {
+        "build": {
+          "configurations": {
+            "production": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+// Example 11: Lazy Loading Configuration (Real Lazy Loading Mocked in Routes)
+
+// const routes: Routes = [
+//   { path: 'feature', loadChildren: () => import('./feature/feature.module').then(m => m.FeatureModule) }
+// ];
+
+
+// Example 12: WebAssembly Integration (Mocked Function)
+
+async function loadWasm() {
+  const wasmModule = await fetch('path/to/module.wasm');
+  const wasmArrayBuffer = await wasmModule.arrayBuffer();
+  const wasmInstance = await WebAssembly.instantiate(wasmArrayBuffer);
+  console.log(wasmInstance.exports);
+}
