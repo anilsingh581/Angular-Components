@@ -17,7 +17,7 @@ This repository contains code examples for the book *Angular Interview Questions
 ## How to Run
 - Clone this repository:
   ```bash
-  git clone https://github.com/yourusername/angular-interview-examples.git
+  git clone [https://github.com/yourusername/angular-interview-examples.git](https://github.com/anilsingh581/Angular-Components.git)
   ```
 - Navigate into the folder:
   ```bash
