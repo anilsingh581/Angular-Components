@@ -1,0 +1,485 @@
+//Forms Examples
+
+//Example 1: Mock HTTP Service
+
+// app.ts
+import { Component, Injectable, NgModule, ViewChild, NgForm } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, FormArray, FormBuilder, Validators, ValidatorFn, AbstractControl, ValidationErrors, AsyncValidatorFn } from '@angular/forms';
+import { RouterModule, Routes, provideRouter } from '@angular/router';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, of, timer, throwError } from 'rxjs';
+import { map, catchError, debounceTime } from 'rxjs/operators';
+import { signal, effect } from '@angular/core';
+
+// Mock HTTP Service
+@Injectable({ providedIn: 'root' })
+export class ApiService {
+  constructor(private http: HttpClient) {}
+
+  getUser(id: string): Observable<any> {
+    return of({ name: 'Anil', email: 'anil@example.com' });
+  }
+
+  checkEmail(email: string): Observable<any> {
+    return timer(1000).pipe(map(() => ({ exists: email === 'admin@example.com' })));
+  }
+
+  submitForm(data: any): Observable<any> {
+    return of({ success: true });
+  }
+}
+
+
+
+// Example 2: Template-driven Form
+
+@Component({
+  selector: 'app-template-form',
+  standalone: true,
+  imports: [FormsModule],
+  template: `
+    <h2>Template-driven Form</h2>
+    <form #userForm="ngForm" (ngSubmit)="submitForm()">
+      <input type="text" [(ngModel)]="user.name" name="name" required />
+      <button type="submit" [disabled]="userForm.invalid">Submit</button>
+    </form>
+  `
+})
+export class TemplateFormComponent {
+  user = { name: '' };
+
+  submitForm() {
+    console.log(this.user); 
+  }
+}
+
+
+
+// Example 3: Reactive Form
+
+@Component({
+  selector: 'app-reactive-form',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Reactive Form</h2>
+    <form [formGroup]="userForm" (ngSubmit)="submitForm()">
+      <input type="text" formControlName="name" />
+      <input type="email" formControlName="email" />
+      <button type="submit">Submit</button>
+    </form>
+  `
+})
+export class ReactiveFormComponent {
+  userForm = new FormGroup({
+    name: new FormControl(''), 
+    email: new FormControl('')
+  });
+
+  submitForm() {
+    console.log(this.userForm.value); 
+  }
+}
+
+
+// Example 4: FormArray
+
+@Component({
+  selector: 'app-form-array',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Form Array</h2>
+    <form [formGroup]="form">
+      <div formArrayName="addresses">
+        <div *ngFor="let address of addresses.controls; let i=index">
+          <input [formControlName]="i" />
+          <button (click)="removeAddress(i)">Remove</button>
+        </div>
+      </div>
+      <button (click)="addAddress()">Add Address</button>
+    </form>
+  `
+})
+export class FormArrayComponent {
+  form = new FormGroup({
+    addresses: new FormArray([ // Example 7
+      new FormControl('Address 1'),
+      new FormControl('Address 2')
+    ])
+  });
+
+  get addresses() {
+    return this.form.get('addresses') as FormArray;
+  }
+
+  addAddress() {
+    this.addresses.push(new FormControl('New Address'));
+  }
+
+  removeAddress(index: number) {
+    this.addresses.removeAt(index);
+  }
+}
+
+
+
+// Example 5: FormBuilder
+
+@Component({
+  selector: 'app-form-builder',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>FormBuilder</h2>
+    <form [formGroup]="form" (ngSubmit)="submitForm()">
+      <input formControlName="name" />
+      <input formControlName="email" />
+      <button type="submit">Submit</button>
+    </form>
+  `
+})
+export class FormBuilderComponent {
+  constructor(private fb: FormBuilder) {}
+
+  form = this.fb.group({
+    name: [''], 
+    email: ['']
+  });
+
+  submitForm() {
+    console.log(this.form.value);
+  }
+}
+
+
+
+// Example 6: Initialize Form Values
+
+@Component({
+  selector: 'app-init-form',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Initialize Form</h2>
+    <form [formGroup]="form">
+      <input formControlName="name" />
+      <input formControlName="email" />
+    </form>
+  `
+})
+export class InitFormComponent {
+  form = new FormGroup({
+    name: new FormControl('Anil'), 
+    email: new FormControl('anil@example.com')
+  });
+}
+
+
+
+// Example 7: Built-in Validators
+@Component({
+  selector: 'app-built-in-validators',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Built-in Validators</h2>
+    <form [formGroup]="form">
+      <input formControlName="username" />
+      <div *ngIf="form.controls.username.errors?.required">Required</div>
+      <div *ngIf="form.controls.username.errors?.minlength">Too short</div>
+    </form>
+  `
+})
+export class BuiltInValidatorsComponent {
+  form = new FormGroup({
+    username: new FormControl('', [Validators.required, Validators.minLength(3)]) 
+  });
+}
+
+
+
+// Example 8: Custom Validator
+
+function noSpecialChars(control: FormControl): ValidationErrors | null {
+  const forbidden = /[^a-zA-Z0-9]/.test(control.value);
+  return forbidden ? { specialCharsNotAllowed: true } : null; 
+}
+
+@Component({
+  selector: 'app-custom-validator',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Custom Validator</h2>
+    <form [formGroup]="form">
+      <input formControlName="username" />
+      <div *ngIf="form.controls.username.errors?.specialCharsNotAllowed">No special chars allowed</div>
+    </form>
+  `
+})
+export class CustomValidatorComponent {
+  form = new FormGroup({
+    username: new FormControl('', [noSpecialChars]) 
+  });
+}
+
+
+
+// Example 9: Async Validator
+
+@Component({
+  selector: 'app-async-validator',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Async Validator</h2>
+    <form [formGroup]="form">
+      <input formControlName="username" />
+      <div *ngIf="form.controls.username.errors?.usernameTaken">Username taken</div>
+    </form>
+  `
+})
+export class AsyncValidatorComponent {
+  constructor(private api: ApiService) {}
+
+  checkUsername(control: AbstractControl): Observable<ValidationErrors | null> {
+    return this.api.checkEmail(control.value).pipe(
+      map(response => response.exists ? { usernameTaken: true } : null) 
+    );
+  }
+
+  form = new FormGroup({
+    username: new FormControl('', [], [this.checkUsername.bind(this)])
+  });
+}
+
+
+
+// Example 10: Disable and Mark Controls
+
+@Component({
+  selector: 'app-control-state',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Control State</h2>
+    <form [formGroup]="form">
+      <input formControlName="username" />
+      <button (click)="toggleDisable()">Toggle Disable</button>
+      <button (click)="markTouched()">Mark Touched</button>
+    </form>
+  `
+})
+export class ControlStateComponent {
+  form = new FormGroup({
+    username: new FormControl('')
+  });
+
+  toggleDisable() {
+    const control = this.form.get('username');
+    control?.disabled ? control.enable() : control.disable(); 
+  }
+
+  markTouched() {
+    this.form.controls['username'].markAsTouched(); 
+  }
+}
+
+
+
+// Example 11: patchValue vs setValue
+
+@Component({
+  selector: 'app-patch-set',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Patch vs Set</h2>
+    <form [formGroup]="form">
+      <input formControlName="name" />
+      <input formControlName="age" />
+      <button (click)="patch()">Patch</button>
+      <button (click)="set()">Set</button>
+    </form>
+  `
+})
+export class PatchSetComponent {
+  form = new FormGroup({
+    name: new FormControl(''),
+    age: new FormControl('')
+  });
+
+  patch() {
+    this.form.patchValue({ name: 'Reena' });
+  }
+
+  set() {
+    this.form.setValue({ name: 'Anil', age: 30 }); 
+  }
+}
+
+
+
+// Example 12: Value Changes
+
+@Component({
+  selector: 'app-value-changes',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Value Changes</h2>
+    <form [formGroup]="form">
+      <input formControlName="name" />
+    </form>
+  `
+})
+export class ValueChangesComponent {
+  form = new FormGroup({
+    name: new FormControl('')
+  });
+
+  constructor() {
+    this.form.get('name')?.valueChanges.subscribe(value => {
+      console.log('New value:', value); 
+    });
+  }
+}
+
+
+
+// Example 13: Nested Form Groups
+
+@Component({
+  selector: 'app-nested-form',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Nested Form</h2>
+    <form [formGroup]="form">
+      <div formGroupName="user">
+        <input formControlName="firstName" />
+        <input formControlName="lastName" />
+      </div>
+    </form>
+  `
+})
+export class NestedFormComponent {
+  form = new FormGroup({
+    user: new FormGroup({
+      firstName: new FormControl(''), 
+      lastName: new FormControl('')
+    })
+  });
+}
+
+
+
+// Example 14: Form Submission with HTTP
+
+@Component({
+  selector: 'app-form-submit',
+  standalone: true,
+  imports: [ReactiveFormsModule],
+  template: `
+    <h2>Form Submission</h2>
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <input formControlName="name" />
+      <button type="submit" [disabled]="isSubmitting || form.invalid">Submit</button>
+    </form>
+  `
+})
+export class FormSubmitComponent {
+  form = new FormGroup({
+    name: new FormControl('')
+  });
+  isSubmitting = false;
+
+  constructor(private api: ApiService) {}
+
+  onSubmit() {
+    if (this.form.valid) {
+      this.isSubmitting = true;
+      this.api.submitForm(this.form.value).subscribe({
+        next: (response) => {
+          console.log('Form submitted:', response); 
+          this.isSubmitting = false;
+        },
+        error: (error) => {
+          console.error('Error:', error);
+          this.isSubmitting = false;
+        }
+      });
+    }
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    RouterModule,
+    TemplateFormComponent,
+    ReactiveFormComponent,
+    FormArrayComponent,
+    FormBuilderComponent,
+    InitFormComponent,
+    BuiltInValidatorsComponent,
+    CustomValidatorComponent,
+    AsyncValidatorComponent,
+    ControlStateComponent,
+    PatchSetComponent,
+    ValueChangesComponent,
+    NestedFormComponent,
+    FormSubmitComponent
+  ],
+  template: `
+    <h1>Angular Forms Demo</h1>
+    <nav>
+      <a routerLink="/template">Template Form</a>
+      <a routerLink="/reactive">Reactive Form</a>
+      <a routerLink="/form-array">Form Array</a>
+      <a routerLink="/form-builder">Form Builder</a>
+      <a routerLink="/init-form">Init Form</a>
+      <a routerLink="/validators">Validators</a>
+      <a routerLink="/custom-validator">Custom Validator</a>
+      <a routerLink="/async-validator">Async Validator</a>
+      <a routerLink="/control-state">Control State</a>
+      <a routerLink="/patch-set">Patch vs Set</a>
+      <a routerLink="/value-changes">Value Changes</a>
+      <a routerLink="/nested-form">Nested Form</a>
+      <a routerLink="/form-submit">Form Submit</a>
+    </nav>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {}
+
+// Routes Definition
+const routes: Routes = [
+  { path: 'template', component: TemplateFormComponent },
+  { path: 'reactive', component: ReactiveFormComponent },
+  { path: 'form-array', component: FormArrayComponent },
+  { path: 'form-builder', component: FormBuilderComponent },
+  { path: 'init-form', component: InitFormComponent },
+  { path: 'validators', component: BuiltInValidatorsComponent },
+  { path: 'custom-validator', component: CustomValidatorComponent },
+  { path: 'async-validator', component: AsyncValidatorComponent },
+  { path: 'control-state', component: ControlStateComponent },
+  { path: 'patch-set', component: PatchSetComponent },
+  { path: 'value-changes', component: ValueChangesComponent },
+  { path: 'nested-form', component: NestedFormComponent },
+  { path: 'form-submit', component: FormSubmitComponent },
+  { path: '', redirectTo: '/template', pathMatch: 'full' }
+];
+
+// Bootstrap the Application
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(routes),
+    ApiService,
+    { provide: HttpClient, useValue: { get: () => of({}), post: () => of({}) } } // Mock HttpClient
+  ]
+}).catch(err => console.error(err));
