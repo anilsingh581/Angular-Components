@@ -1,0 +1,342 @@
+// Examples of Signals
+
+// Example 1a: Basic Signal with set()
+
+// app.ts
+import { Component, signal, computed, effect, Directive, Input, inject } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+
+// Basic Signal with set()
+@Component({
+  selector: 'app-name-changer',
+  standalone: true,
+  template: `
+    <h2>Name Changer</h2>
+    <p>Current Name: {{ name() }}</p>
+    <button (click)="changeName()">Change Name</button>
+  `
+})
+class NameChangerComponent {
+  name = signal('Anil');
+
+  changeName() {
+    this.name.set('Reena'); // Example 1a
+  }
+}
+
+
+
+// Example 2: Signal with update()
+
+@Component({
+  selector: 'app-counter',
+  standalone: true,
+  template: `
+    <h2>Counter</h2>
+    <p>Counter: {{ counter() }}</p>
+    <button (click)="increment()">Increment</button>
+  `
+})
+class CounterComponent {
+  counter = signal(0);
+
+  increment() {
+    this.counter.update(value => value + 1); // Example 1b
+  }
+}
+
+// Example 3: Signal with mutate() (Object)
+
+@Component({
+  selector: 'app-user',
+  standalone: true,
+  template: `
+    <h2>User</h2>
+    <p>Name: {{ user().name }}</p>
+    <p>Age: {{ user().age }}</p>
+    <button (click)="increaseAge()">Increase Age</button>
+  `
+})
+class UserComponent {
+  user = signal({ name: 'Anil', age: 35 });
+
+  increaseAge() {
+    this.user.mutate(u => u.age += 1); // Example 1c
+  }
+}
+
+
+
+// Example 4: Signal with mutate() (Array)
+
+@Component({
+  selector: 'app-items',
+  standalone: true,
+  template: `
+    <h2>Items</h2>
+    <ul>
+      @for (item of items(); track item) {
+        <li>{{ item }}</li>
+      }
+    </ul>
+    <button (click)="addItem()">Add Item</button>
+  `
+})
+class ItemsComponent {
+  items = signal(['Apple', 'Banana']);
+
+  addItem() {
+    this.items.mutate(list => list.push('Orange')); // Example 1d
+  }
+}
+
+
+
+// Example 5: Computed and Effect Signal
+
+@Component({
+  selector: 'app-computed-effect',
+  standalone: true,
+  template: `
+    <h2>Computed & Effect</h2>
+    <p>Count: {{ count() }}</p>
+    <p>Double Count: {{ doubleCount() }}</p>
+    <button (click)="increment()">Increment</button>
+  `
+})
+class ComputedEffectComponent {
+  count = signal(0);
+  doubleCount = computed(() => this.count() * 2); // Example 1e: Computed
+
+  constructor() {
+    effect(() => console.log(`Count changed to: ${this.count()}`)); // Example 1e: Effect
+  }
+
+  increment() {
+    this.count.set(this.count() + 1);
+  }
+}
+
+
+
+// Example 6: Signals vs Observables
+
+@Component({
+  selector: 'app-signal-vs-observable',
+  standalone: true,
+  template: `
+    <h2>Signals vs Observables</h2>
+    <p>RxJS Observable: {{ data$ | async }}</p>
+    <p>Signal Value: {{ count() }}</p>
+  `
+})
+class SignalVsObservableComponent {
+  data$: Observable<number> = of(10);
+  count = signal(10);
+}
+
+
+// Example 7: Simple Signal Creation
+@Component({
+  selector: 'app-simple-signal',
+  standalone: true,
+  template: `
+    <h2>Simple Signal</h2>
+    <p>Counter: {{ count() }}</p>
+    <button (click)="increment()">Increment</button>
+  `
+})
+class SimpleSignalComponent {
+  count = signal(0);
+
+  increment() {
+    this.count.set(this.count() + 1); // Example 3
+  }
+}
+
+
+// Example 8: Writable Signal
+@Component({
+  selector: 'app-writable-signal',
+  standalone: true,
+  template: `
+    <h2>Writable Signal</h2>
+    <p>Value: {{ value() }}</p>
+    <button (click)="changeValue()">Change Value</button>
+  `
+})
+class WritableSignalComponent {
+  value = signal('Hello');
+
+  changeValue() {
+    this.value.set('Angular Signals!'); // Example 4
+  }
+}
+
+
+// Example 9: Reading Signal Value
+@Component({
+  selector: 'app-read-signal',
+  standalone: true,
+  template: `
+    <h2>Read Signal</h2>
+    <p>Current Value: {{ count() }}</p>
+    <button (click)="logValue()">Log Value</button>
+  `
+})
+class ReadSignalComponent {
+  count = signal(5);
+
+  logValue() {
+    console.log(this.count()); // Example 5
+  }
+}
+
+
+
+// Example 10: Computed Signal
+@Component({
+  selector: 'app-computed-signal',
+  standalone: true,
+  template: `
+    <h2>Computed Signal</h2>
+    <p>Double Count: {{ doubleCount() }}</p>
+    <button (click)="count.set(count() + 1)">Increment</button>
+  `
+})
+class ComputedSignalComponent {
+  count = signal(5);
+  doubleCount = computed(() => this.count() * 2); // Example 6
+}
+
+
+// Example 11: Effect Signal
+@Component({
+  selector: 'app-effect-signal',
+  standalone: true,
+  template: `
+    <h2>Effect Signal</h2>
+    <p>Value: {{ value() }}</p>
+    <button (click)="value.set(value() + 1)">Increment</button>
+  `
+})
+class EffectSignalComponent {
+  value = signal(10);
+
+  constructor() {
+    effect(() => console.log('Value changed:', this.value())); // Example 7
+  }
+}
+
+
+
+// Example 12: Signal Reactivity
+@Component({
+  selector: 'app-signal-reactivity',
+  standalone: true,
+  template: `
+    <h2>Signal Reactivity</h2>
+    <p>Price with Tax: {{ priceWithTax() }}</p>
+    <button (click)="price.set(price() + 10)">Increase Price</button>
+  `
+})
+class SignalReactivityComponent {
+  price = signal(100);
+  taxRate = signal(0.1);
+  priceWithTax = computed(() => this.price() * (1 + this.taxRate())); // Example 8
+}
+
+
+
+// Example 12 Change Detection with Signals
+@Component({
+  selector: 'app-detect-signal',
+  standalone: true,
+  template: `
+    <h2>Detect Signal</h2>
+    <p>Value: {{ value() }}</p>
+    <button (click)="updateValue()">Update</button>
+  `
+})
+class DetectSignalComponent {
+  value = signal(1);
+
+  updateValue() {
+    this.value.set(this.value() + 1); // Example 9
+  }
+}
+
+
+
+// Example 14: Traditional vs Signals
+@Component({
+  selector: 'app-rxjs-example',
+  standalone: true,
+  template: `
+    <h2>RxJS vs Signals</h2>
+    <p>RxJS Value: {{ value$ | async }}</p>
+    <button (click)="updateRxjs()">Update RxJS</button>
+    <p>Signal Value: {{ value() }}</p>
+    <button (click)="updateSignal()">Update Signal</button>
+  `
+})
+class RxjsVsSignalsComponent {
+  value$ = new BehaviorSubject<number>(0);
+  value = signal(0);
+
+  updateRxjs() {
+    this.value$.next(this.value$.value + 1); // Example 10: RxJS
+  }
+
+  updateSignal() {
+    this.value.set(this.value() + 1); // Example 10: Signals
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    FormsModule,
+    NameChangerComponent,
+    CounterComponent,
+    UserComponent,
+    ItemsComponent,
+    ComputedEffectComponent,
+    SignalVsObservableComponent,
+    SimpleSignalComponent,
+    WritableSignalComponent,
+    ReadSignalComponent,
+    ComputedSignalComponent,
+    EffectSignalComponent,
+    SignalReactivityComponent,
+    DetectSignalComponent,
+    RxjsVsSignalsComponent
+  ],
+  template: `
+    <h1>Angular Signals Demo</h1>
+    <app-name-changer></app-name-changer>
+    <app-counter></app-counter>
+    <app-user></app-user>
+    <app-items></app-items>
+    <app-computed-effect></app-computed-effect>
+    <app-signal-vs-observable></app-signal-vs-observable>
+    <app-simple-signal></app-simple-signal>
+    <app-writable-signal></app-writable-signal>
+    <app-read-signal></app-read-signal>
+    <app-computed-signal></app-computed-signal>
+    <app-effect-signal></app-effect-signal>
+    <app-signal-reactivity></app-signal-reactivity>
+    <app-detect-signal></app-detect-signal>
+    <app-rxjs-example></app-rxjs-example>
+  `
+})
+export class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
