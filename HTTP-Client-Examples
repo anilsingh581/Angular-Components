@@ -1,0 +1,622 @@
+// HTTP Client Examples
+
+//Example 1: Mock Auth Service
+
+// app.ts
+import { Component, Injectable, NgModule, HostListener } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { HttpClient, HttpHeaders, HttpParams, HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HttpErrorResponse, HTTP_INTERCEPTORS, provideHttpClient } from '@angular/common/http';
+import { RouterModule, Routes, provideRouter, ActivatedRoute, CanActivate } from '@angular/router';
+import { Observable, of, throwError, Subscription, forkJoin } from 'rxjs';
+import { catchError, retry, timeout, map, tap, switchMap, debounceTime, distinctUntilChanged, shareReplay } from 'rxjs/operators';
+import { signal } from '@angular/core';
+
+// Mock Auth Service
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private token = 'mock-token';
+  private loggedIn = false;
+
+  login() { this.loggedIn = true; }
+  logout() { this.loggedIn = false; this.token = ''; }
+  isAuthenticated() { return this.loggedIn; }
+  getToken() { return this.token; }
+  setToken(token: string) { this.token = token; }
+  refreshToken(): Observable<string> {
+    return of('new-mock-token').pipe(tap(token => this.setToken(token)));
+  }
+}
+
+
+
+// Example 2: Simple GET Request
+@Component({
+  selector: 'app-get-request',
+  standalone: true,
+  template: `
+    <h2>Simple GET Request</h2>
+    <p>{{ data | json }}</p>
+  `
+})
+export class GetRequestComponent {
+  data: any = null;
+  private subscription!: Subscription;
+
+  constructor(private http: HttpClient) {
+    this.subscription = this.http.get('https://api.example.com/users').subscribe(users => {
+      this.data = users; 
+    });
+  }
+
+  ngOnDestroy() {
+    this.subscription.unsubscribe();
+  }
+}
+
+
+
+// Example 3: POST Request
+@Component({
+  selector: 'app-post-request',
+  standalone: true,
+  template: `
+    <h2>POST Request</h2>
+    <button (click)="createUser()">Create User</button>
+    <p>{{ response | json }}</p>
+  `
+})
+export class PostRequestComponent {
+  response: any = null;
+
+  constructor(private http: HttpClient) {}
+
+  createUser() {
+    const user = { name: 'Anil', email: 'anil@example.com' };
+    this.http.post('https://api.example.com/users', user).subscribe(res => {
+      this.response = res; 
+    });
+  }
+}
+
+
+
+// Example 4: Request Headers
+@Component({
+  selector: 'app-headers-request',
+  standalone: true,
+  template: `
+    <h2>Headers Request</h2>
+    <button (click)="fetchData()">Fetch with Headers</button>
+    <p>{{ data | json }}</p>
+  `
+})
+export class HeadersRequestComponent {
+  data: any = null;
+
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    const headers = new HttpHeaders({
+      'Authorization': 'Bearer my-token',
+      'Custom-Header': 'value' 
+    });
+    this.http.get('https://api.example.com/data', { headers }).subscribe(res => {
+      this.data = res;
+    });
+  }
+}
+
+
+
+// Example 5: Query Parameters
+
+@Component({
+  selector: 'app-query-params',
+  standalone: true,
+  template: `
+    <h2>Query Parameters</h2>
+    <button (click)="fetchData()">Fetch with Params</button>
+    <p>{{ data | json }}</p>
+  `
+})
+export class QueryParamsComponent {
+  data: any = null;
+
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    const params = new HttpParams().set('page', '1').set('limit', '10');
+    this.http.get('https://api.example.com/users', { params }).subscribe(res => {
+      this.data = res;
+    });
+  }
+}
+
+
+
+// Example 6: Response Types
+
+@Component({
+  selector: 'app-response-types',
+  standalone: true,
+  template: `
+    <h2>Response Types</h2>
+    <button (click)="downloadFile()">Download File</button>
+  `
+})
+export class ResponseTypesComponent {
+  constructor(private http: HttpClient) {}
+
+  downloadFile() {
+    this.http.get('https://api.example.com/file', { responseType: 'blob' }).subscribe(blob => {
+      const url = window.URL.createObjectURL(blob); 
+      window.open(url);
+    });
+  }
+}
+
+
+
+// Example 7: Observe Option
+
+@Component({
+  selector: 'app-observe-option',
+  standalone: true,
+  template: `
+    <h2>Observe Option</h2>
+    <button (click)="fetchData()">Fetch with Observe</button>
+    <p>Headers: {{ headers }}</p>
+    <p>Body: {{ body | json }}</p>
+  `
+})
+export class ObserveOptionComponent {
+  headers: string | null = null;
+  body: any = null;
+
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    this.http.get('https://api.example.com/users', { observe: 'response' }).subscribe(response => {
+      this.headers = response.headers.get('Content-Length'); 
+      this.body = response.body;
+    });
+  }
+}
+
+
+
+// Example 8: Error Handling
+
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  constructor(private http: HttpClient) {}
+
+  getData() {
+    return this.http.get('https://api.example.com/data').pipe(
+      catchError(this.handleError) 
+    );
+  }
+
+  private handleError(error: HttpErrorResponse) {
+    const message = error.status === 0 ? 'Network error' : `Error: ${error.status}`;
+    return throwError(() => new Error(message));
+  }
+}
+
+
+
+// Example 9: Retry Failed Requests
+
+@Component({
+  selector: 'app-retry-request',
+  standalone: true,
+  template: `
+    <h2>Retry Request</h2>
+    <button (click)="fetchData()">Fetch with Retry</button>
+    <p>{{ data | json }}</p>
+  `
+})
+export class RetryRequestComponent {
+  data: any = null;
+
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    this.http.get('https://api.example.com/data').pipe(
+      retry(3) 
+    ).subscribe(res => this.data = res);
+  }
+}
+
+
+
+// Example 10: Auth Interceptor
+
+@Injectable({ providedIn: 'root' })
+export class AuthInterceptor implements HttpInterceptor {
+  constructor(private authService: AuthService) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = this.authService.getToken();
+    const authReq = token ? req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` } 
+    }) : req;
+    return next.handle(authReq);
+  }
+}
+
+
+
+// Example 11: Cancel Request
+@Component({
+  selector: 'app-cancel-request',
+  standalone: true,
+  template: `
+    <h2>Cancel Request</h2>
+    <button (click)="startRequest()">Start</button>
+    <button (click)="cancelRequest()">Cancel</button>
+    <p>{{ data | json }}</p>
+  `
+})
+export class CancelRequestComponent {
+  data: any = null;
+  controller = new AbortController();
+
+  constructor(private http: HttpClient) {}
+
+  startRequest() {
+    this.http.get('https://api.example.com/data', { signal: this.controller.signal }).subscribe(res => {
+      this.data = res; 
+    });
+  }
+
+  cancelRequest() {
+    this.controller.abort();
+  }
+}
+
+
+
+// Example 12: Timeout
+@Component({
+  selector: 'app-timeout-request',
+  standalone: true,
+  template: `
+    <h2>Timeout Request</h2>
+    <button (click)="fetchData()">Fetch with Timeout</button>
+    <p>{{ data | json }}</p>
+  `
+})
+export class TimeoutRequestComponent {
+  data: any = null;
+
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    this.http.get('https://api.example.com/data').pipe(
+      timeout(5000), 
+      catchError(() => throwError(() => new Error('Timeout')))
+    ).subscribe(res => this.data = res);
+  }
+}
+
+
+
+// Example 13: map vs tap
+@Component({
+  selector: 'app-map-tap',
+  standalone: true,
+  template: `
+    <h2>Map vs Tap</h2>
+    <button (click)="fetchData()">Fetch</button>
+    <p>{{ data | json }}</p>
+  `
+})
+export class MapTapComponent {
+  data: any = null;
+
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    this.http.get<any[]>('https://api.example.com/data').pipe(
+      tap(data => console.log('Original:', data)), 
+      map(data => data.filter(item => item.active))
+    ).subscribe(res => this.data = res);
+  }
+}
+
+
+
+// Example 14: Fetch and Display Data
+@Component({
+  selector: 'app-data-list',
+  standalone: true,
+  template: `
+    <h2>Data List</h2>
+    <ul><li *ngFor="let item of data">{{ item.name }}</li></ul>
+  `
+})
+export class DataListComponent {
+  data: any[] = [];
+
+  constructor(private dataService: DataService) {
+    this.dataService.getData().subscribe(res => this.data = res); 
+  }
+}
+
+
+
+// Example 15: Infinite Scroll
+@Component({
+  selector: 'app-infinite-scroll',
+  standalone: true,
+  template: `
+    <h2>Infinite Scroll</h2>
+    <div *ngFor="let item of data">{{ item.name }}</div>
+  `
+})
+export class InfiniteScrollComponent {
+  data: any[] = [];
+  page = 1;
+
+  constructor(private http: HttpClient) {
+    this.loadMore();
+  }
+
+  @HostListener('window:scroll', [])
+  onScroll() {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+      this.loadMore(); 
+    }
+  }
+
+  loadMore() {
+    this.http.get<any[]>(`https://api.example.com/data?page=${this.page++}`).subscribe(res => {
+      this.data.push(...res);
+    });
+  }
+}
+
+
+
+// Example 16: File Upload
+@Component({
+  selector: 'app-file-upload',
+  standalone: true,
+  template: `
+    <h2>File Upload</h2>
+    <input type="file" (change)="onFileSelected($event)" />
+    <button (click)="upload()">Upload</button>
+  `
+})
+export class FileUploadComponent {
+  selectedFile: File | null = null;
+
+  constructor(private http: HttpClient) {}
+
+  onFileSelected(event: Event) {
+    this.selectedFile = (event.target as HTMLInputElement).files?.[0] || null;
+  }
+
+  upload() {
+    if (this.selectedFile) {
+      const formData = new FormData();
+      formData.append('file', this.selectedFile);
+      this.http.post('https://api.example.com/upload', formData).subscribe(); 
+    }
+  }
+}
+
+
+
+// Example 17: File Download
+@Component({
+  selector: 'app-file-download',
+  standalone: true,
+  template: `
+    <h2>File Download</h2>
+    <button (click)="download()">Download</button>
+  `
+})
+export class FileDownloadComponent {
+  constructor(private http: HttpClient) {}
+
+  download() {
+    this.http.get('https://api.example.com/file', { responseType: 'blob' }).subscribe(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'file.pdf';
+      a.click(); 
+      window.URL.revokeObjectURL(url);
+    });
+  }
+}
+
+
+
+// Example 18: Multiple API Calls
+
+@Component({
+  selector: 'app-multi-call',
+  standalone: true,
+  template: `
+    <h2>Multiple API Calls</h2>
+    <button (click)="fetchData()">Fetch</button>
+    <p>{{ users | json }}</p>
+    <p>{{ orders | json }}</p>
+  `
+})
+export class MultiCallComponent {
+  users: any[] = [];
+  orders: any[] = [];
+
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    forkJoin([
+      this.http.get<any[]>('https://api.example.com/users'),
+      this.http.get<any[]>('https://api.example.com/orders')
+    ]).subscribe(([users, orders]) => { 
+      this.users = users;
+      this.orders = orders;
+    });
+  }
+}
+
+
+
+// Example 19: Token Refresh Interceptor
+
+@Injectable({ providedIn: 'root' })
+export class RefreshTokenInterceptor implements HttpInterceptor {
+  constructor(private authService: AuthService) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = this.authService.getToken();
+    let authReq = token ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }) : req;
+
+    return next.handle(authReq).pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.authService.refreshToken().pipe(
+            switchMap(newToken => {
+              authReq = req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } });
+              return next.handle(authReq);
+            })
+          );
+        }
+        return throwError(() => error);
+      })
+    );
+  }
+}
+
+
+
+// Example 20: Auth Guard
+
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(): boolean {
+    if (!this.authService.isAuthenticated()) {
+      this.router.navigate(['/login']);
+      return false; 
+    }
+    return true;
+  }
+}
+
+// Example 21: JWT Auth and Login
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  template: `
+    <h2>Login</h2>
+    <button (click)="login()">Login</button>
+  `
+})
+export class LoginComponent {
+  constructor(private http: HttpClient, private authService: AuthService, private router: Router) {}
+
+  login() {
+    this.http.post<{ token: string }>('https://api.example.com/auth/login', { username: 'user', password: 'pass' }).pipe(
+      tap(response => {
+        localStorage.setItem('token', response.token); 
+        this.authService.setToken(response.token);
+        this.authService.login();
+        this.router.navigate(['/dashboard']);
+      })
+    ).subscribe(); 
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    RouterModule,
+    GetRequestComponent,
+    PostRequestComponent,
+    HeadersRequestComponent,
+    QueryParamsComponent,
+    ResponseTypesComponent,
+    ObserveOptionComponent,
+    RetryRequestComponent,
+    CancelRequestComponent,
+    TimeoutRequestComponent,
+    MapTapComponent,
+    DataListComponent,
+    InfiniteScrollComponent,
+    FileUploadComponent,
+    FileDownloadComponent,
+    MultiCallComponent,
+    LoginComponent
+  ],
+  template: `
+    <h1>Angular HTTP Client Demo</h1>
+    <nav>
+      <a routerLink="/get">GET</a>
+      <a routerLink="/post">POST</a>
+      <a routerLink="/headers">Headers</a>
+      <a routerLink="/params">Params</a>
+      <a routerLink="/response-types">Response Types</a>
+      <a routerLink="/observe">Observe</a>
+      <a routerLink="/retry">Retry</a>
+      <a routerLink="/cancel">Cancel</a>
+      <a routerLink="/timeout">Timeout</a>
+      <a routerLink="/map-tap">Map vs Tap</a>
+      <a routerLink="/data-list">Data List</a>
+      <a routerLink="/infinite-scroll">Infinite Scroll</a>
+      <a routerLink="/file-upload">File Upload</a>
+      <a routerLink="/file-download">File Download</a>
+      <a routerLink="/multi-call">Multi Call</a>
+      <a routerLink="/login">Login</a>
+    </nav>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {}
+
+// Routes Definition
+const routes: Routes = [
+  { path: 'get', component: GetRequestComponent },
+  { path: 'post', component: PostRequestComponent },
+  { path: 'headers', component: HeadersRequestComponent },
+  { path: 'params', component: QueryParamsComponent },
+  { path: 'response-types', component: ResponseTypesComponent },
+  { path: 'observe', component: ObserveOptionComponent },
+  { path: 'retry', component: RetryRequestComponent },
+  { path: 'cancel', component: CancelRequestComponent },
+  { path: 'timeout', component: TimeoutRequestComponent },
+  { path: 'map-tap', component: MapTapComponent },
+  { path: 'data-list', component: DataListComponent },
+  { path: 'infinite-scroll', component: InfiniteScrollComponent },
+  { path: 'file-upload', component: FileUploadComponent },
+  { path: 'file-download', component: FileDownloadComponent },
+  { path: 'multi-call', component: MultiCallComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'dashboard', component: DataListComponent, canActivate: [AuthGuard] },
+  { path: '', redirectTo: '/get', pathMatch: 'full' }
+];
+
+// Bootstrap the Application
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(),
+    DataService,
+    AuthService,
+    AuthGuard,
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: HTTP_INTERCEPTORS, useClass: RefreshTokenInterceptor, multi: true },
+    { provide: HttpClient, useValue: { // Mock HttpClient
+      get: () => of({ name: 'Mock Data' }),
+      post: () => of({ success: true })
+    }}
+  ]
+}).catch(err => console.error(err));
