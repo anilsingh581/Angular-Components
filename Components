@@ -1,6 +1,7 @@
-// Angular Components Git Repository Setup
+// Angular Components Examples
 
-// Basic Component Example
+
+// Example 1: Basic Component 
 // File: src/app/components/hello-world/hello-world.component.ts
 import { Component } from '@angular/core';
 
@@ -13,7 +14,9 @@ export class HelloWorldComponent {
   name: string = 'Angular';
 }
 
-// Standalone Component Example
+
+
+// Example 2: Standalone Component
 // File: src/app/components/standalone/standalone.component.ts
 import { Component } from '@angular/core';
 
@@ -25,7 +28,9 @@ import { Component } from '@angular/core';
 })
 export class StandaloneComponent {}
 
-// Lifecycle Hook Example
+
+
+// Example 3: Lifecycle Hook 
 // File: src/app/components/lifecycle/lifecycle.component.ts
 import { Component, OnInit, OnDestroy } from '@angular/core';
 
@@ -38,7 +43,9 @@ export class LifecycleComponent implements OnInit, OnDestroy {
   ngOnDestroy() { console.log('Component Destroyed'); }
 }
 
-// Dependency Injection Example
+
+
+// Example 4: Dependency Injection
 // File: src/app/services/logger.service.ts
 import { Injectable } from '@angular/core';
 
@@ -61,7 +68,9 @@ export class LoggerComponent {
   }
 }
 
-// Lazy Loaded Component
+
+
+// Example 5: Lazy Loaded Component
 // File: src/app/components/lazy/lazy.component.ts
 import { Component } from '@angular/core';
 
