@@ -1,0 +1,466 @@
+// Routing Examples
+
+//Example 1:  Mock Services
+
+// app.ts
+import { Component, Injectable, NgModule } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { Router, RouterModule, Routes, ActivatedRoute, CanActivate, CanDeactivate, Resolve, Route, PreloadingStrategy, NavigationExtras, provideRouter, PreloadAllModules } from '@angular/router';
+import { Location } from '@angular/common';
+import { Observable, of, EMPTY } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { trigger, transition, style, animate } from '@angular/animations';
+
+// Mock Services
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private loggedIn = false;
+
+  login() { this.loggedIn = true; }
+  logout() { this.loggedIn = false; }
+  isLoggedIn() { return this.loggedIn; }
+}
+
+@Injectable({ providedIn: 'root' })
+export class UserService {
+  getUser(id: string | null): Observable<any> {
+    return id === '1' ? of({ id: '1', name: 'Test User' }) : of(null).pipe(
+      catchError(() => of(null))
+    );
+  }
+}
+
+
+
+// Example 2: Home Component
+@Component({
+  selector: 'app-home',
+  standalone: true,
+  template: `
+    <h2>Home</h2>
+    <a routerLink="/about">Go to About</a>
+    <a [routerLink]="['/product', '123']">View Product 123</a>
+  `
+})
+export class HomeComponent {}
+
+
+
+// Example 3: About Component
+@Component({
+  selector: 'app-about',
+  standalone: true,
+  template: `<h2>About</h2>`
+})
+export class AboutComponent {}
+
+
+
+// Example 4: Programmatic Navigation
+@Component({
+  selector: 'app-navigate',
+  standalone: true,
+  template: `
+    <h2>Navigate</h2>
+    <button (click)="goToAbout()">Go to About</button>
+  `
+})
+export class NavigateComponent {
+  constructor(private router: Router) {}
+
+  goToAbout() {
+    this.router.navigate(['/about']); // Example 7
+  }
+}
+
+
+// Example 5: Route Parameters
+@Component({
+  selector: 'app-product',
+  standalone: true,
+  template: `
+    <h2>Product</h2>
+    <p>Product ID: {{ productId }}</p>
+  `
+})
+export class ProductComponent {
+  productId: string | null = null;
+
+  constructor(private route: ActivatedRoute) {
+    this.route.paramMap.subscribe(params => {
+      this.productId = params.get('id'); // Example 9
+    });
+  }
+}
+
+
+// Example 6: Wildcard Route (404)
+@Component({
+  selector: 'app-not-found',
+  standalone: true,
+  template: `
+    <h2>404 - Not Found</h2>
+    <button (click)="goHome()">Back to Home</button>
+  `
+})
+export class NotFoundComponent {
+  constructor(private router: Router) {}
+
+  goHome() {
+    this.router.navigate(['/home']);
+  }
+}
+
+
+// Example 7: Child Routes - Dashboard
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  template: `
+    <h2>Dashboard</h2>
+    <a routerLink="/dashboard/stats">Stats</a>
+    <a routerLink="/dashboard/reports">Reports</a>
+    <router-outlet></router-outlet>
+  `
+})
+export class DashboardComponent {}
+
+
+
+// Example 8: Child Routes - Stats
+@Component({
+  selector: 'app-stats',
+  standalone: true,
+  template: `<h3>Stats</h3>`
+})
+export class StatsComponent {}
+
+
+
+// Example 9: Child Routes - Reports
+@Component({
+  selector: 'app-reports',
+  standalone: true,
+  template: `<h3>Reports</h3>`
+})
+export class ReportsComponent {}
+
+
+
+// Example 10: Lazy Loading Placeholder
+@Component({
+  selector: 'app-users',
+  standalone: true,
+  template: `<h2>Users (Lazy Loaded)</h2>`
+})
+export class UsersComponent {}
+
+
+
+// Example 11: CanActivate Guard
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(): boolean {
+    if (this.authService.isLoggedIn()) return true;
+    this.router.navigate(['/login']); // Example 17
+    return false;
+  }
+}
+
+
+
+// Example 12: CanDeactivate Guard
+export interface CanComponentDeactivate {
+  canDeactivate: () => boolean;
+}
+
+@Injectable({ providedIn: 'root' })
+export class UnsavedChangesGuard implements CanDeactivate<CanComponentDeactivate> {
+  canDeactivate(component: CanComponentDeactivate): boolean {
+    return component.canDeactivate ? component.canDeactivate() : true; // Example 17
+  }
+}
+
+
+
+// Example 13: Edit Profile with CanDeactivate
+@Component({
+  selector: 'app-edit-profile',
+  standalone: true,
+  template: `
+    <h2>Edit Profile</h2>
+    <button (click)="save()">Save</button>
+  `
+})
+export class EditProfileComponent implements CanComponentDeactivate {
+  private hasChanges = true;
+
+  save() {
+    this.hasChanges = false;
+  }
+
+  canDeactivate(): boolean {
+    return !this.hasChanges || confirm('Do you want to leave without saving changes?');
+  }
+}
+
+
+
+// Example 14: Resolve Guard
+@Injectable({ providedIn: 'root' })
+export class UserResolver implements Resolve<any> {
+  constructor(private userService: UserService, private router: Router) {}
+
+  resolve(route: ActivatedRouteSnapshot): Observable<any> {
+    return this.userService.getUser(route.paramMap.get('id')).pipe(
+      catchError(() => {
+        this.router.navigate(['/not-found']); // Example 18
+        return of(null);
+      })
+    );
+  }
+}
+
+
+
+// Example 15: Protected Routes - Login
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  template: `
+    <h2>Login</h2>
+    <button (click)="login()">Login</button>
+  `
+})
+export class LoginComponent {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  login() {
+    this.authService.login();
+    this.router.navigate(['/dashboard']);
+  }
+}
+
+
+
+// Example 16: Programmatic Navigation with Extras
+@Component({
+  selector: 'app-navigate-extras',
+  standalone: true,
+  template: `
+    <h2>Navigate Extras</h2>
+    <button (click)="navigateWithUrl()">Navigate By URL</button>
+    <button (click)="navigateWithExtras()">Navigate with Extras</button>
+  `
+})
+export class NavigateExtrasComponent {
+  constructor(private router: Router) {}
+
+  navigateWithUrl() {
+    this.router.navigateByUrl('/dashboard'); // Example 22
+  }
+
+  navigateWithExtras() {
+    this.router.navigate(['/dashboard'], { skipLocationChange: true }); // Example 22 & 25
+  }
+}
+
+
+
+// Example 17: Query Parameters
+@Component({
+  selector: 'app-products',
+  standalone: true,
+  template: `
+    <h2>Products</h2>
+    <p>Category: {{ category }}</p>
+    <a [routerLink]="['/products']" [queryParams]="{ category: 'electronics' }">Electronics</a>
+  `
+})
+export class ProductsComponent {
+  category: string | null = null;
+
+  constructor(private route: ActivatedRoute) {
+    this.route.queryParams.subscribe(params => {
+      this.category = params['category']; // Example 24
+    });
+  }
+}
+
+
+
+// Example 18: Location Service
+@Component({
+  selector: 'app-history',
+  standalone: true,
+  template: `
+    <h2>History</h2>
+    <button (click)="goBack()">Back</button>
+    <button (click)="goForward()">Forward</button>
+  `
+})
+export class HistoryComponent {
+  constructor(private location: Location) {}
+
+  goBack() {
+    this.location.back(); // Example 27 & 28
+  }
+
+  goForward() {
+    this.location.forward();
+  }
+}
+
+
+
+// Example 19: routerLinkActive
+@Component({
+  selector: 'app-nav-links',
+  standalone: true,
+  template: `
+    <h2>Navigation Links</h2>
+    <a routerLink="/home" routerLinkActive="active">Home</a>
+    <a routerLink="/about" routerLinkActive="active highlighted">About</a>
+  `,
+  styles: [`
+    .active { font-weight: bold; }
+    .highlighted { background-color: yellow; }
+  `]
+})
+export class NavLinksComponent {}
+
+
+
+// Example 20: Lazy Loading with Signals (Simplified)
+@Component({
+  selector: 'app-dashboard-signal',
+  standalone: true,
+  template: `
+    <h2>Dashboard with Signals</h2>
+    <p>User ID: {{ userId() }}</p>
+  `
+})
+export class DashboardSignalComponent {
+  userId = signal<string | null>(null);
+
+  constructor(private route: ActivatedRoute) {
+    this.route.paramMap.subscribe(params => {
+      this.userId.set(params.get('id')); // Example 37
+    });
+  }
+}
+
+
+
+// Example 21: Route Animation
+@Component({
+  selector: 'app-animated',
+  standalone: true,
+  template: `
+    <h2>Animated Component</h2>
+    <div @routeAnimations>Content Here</div>
+  `,
+  animations: [
+    trigger('routeAnimations', [
+      transition('* <=> *', [
+        style({ opacity: 0 }),
+        animate('300ms ease-in', style({ opacity: 1 })) // Example 36
+      ])
+    ])
+  ]
+})
+export class AnimatedComponent {}
+
+
+
+// Example 22: Custom Preloading Strategy
+@Injectable({ providedIn: 'root' })
+export class CustomPreloadingStrategy implements PreloadingStrategy {
+  preload(route: Route, load: () => Observable<any>): Observable<any> {
+    return route.data?.['preload'] ? load() : of(null); // Example 41
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    RouterModule,
+    HomeComponent,
+    AboutComponent,
+    NavigateComponent,
+    ProductComponent,
+    NotFoundComponent,
+    DashboardComponent,
+    StatsComponent,
+    ReportsComponent,
+    UsersComponent,
+    EditProfileComponent,
+    LoginComponent,
+    NavigateExtrasComponent,
+    ProductsComponent,
+    HistoryComponent,
+    NavLinksComponent,
+    DashboardSignalComponent,
+    AnimatedComponent
+  ],
+  template: `
+    <h1>Angular Routing Demo</h1>
+    <nav>
+      <a routerLink="/home">Home</a>
+      <a routerLink="/navigate">Navigate</a>
+      <a routerLink="/dashboard">Dashboard</a>
+      <a routerLink="/edit-profile">Edit Profile</a>
+      <a routerLink="/login">Login</a>
+      <a routerLink="/products">Products</a>
+      <a routerLink="/history">History</a>
+      <a routerLink="/nav-links">Nav Links</a>
+      <a routerLink="/users">Users</a>
+      <a routerLink="/dashboard-signal/1">Dashboard Signal</a>
+      <a routerLink="/animated">Animated</a>
+    </nav>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {}
+
+// Routes Definition
+const routes: Routes = [
+  { path: 'home', component: HomeComponent }, // Example 2
+  { path: 'about', component: AboutComponent }, // Example 2
+  { path: 'navigate', component: NavigateComponent }, // Example 7
+  { path: 'product/:id', component: ProductComponent }, // Example 8
+  { path: '', redirectTo: '/home', pathMatch: 'full' }, // Example 14
+  { path: 'dashboard', component: DashboardComponent, children: [ // Example 11
+    { path: 'stats', component: StatsComponent },
+    { path: 'reports', component: ReportsComponent }
+  ]},
+  { path: 'users', loadComponent: () => import('./app').then(m => m.UsersComponent) }, // Example 12
+  { path: 'edit-profile', component: EditProfileComponent, canDeactivate: [UnsavedChangesGuard] }, // Example 17
+  { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] }, // Example 20
+  { path: 'login', component: LoginComponent }, // Example 20
+  { path: 'navigate-extras', component: NavigateExtrasComponent }, // Example 21 & 22
+  { path: 'products', component: ProductsComponent }, // Example 23
+  { path: 'history', component: HistoryComponent }, // Example 27 & 28
+  { path: 'nav-links', component: NavLinksComponent }, // Example 29
+  { path: 'dashboard-signal/:id', component: DashboardSignalComponent }, // Example 32
+  { path: 'animated', component: AnimatedComponent }, // Example 36
+  { path: 'profile/:id', component: ProductComponent, resolve: { user: UserResolver } }, // Example 18
+  { path: '**', component: NotFoundComponent } // Example 10 & 42
+];
+
+// Bootstrap the Application
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(routes, { preloadingStrategy: CustomPreloadingStrategy }), // Example 41
+    AuthService,
+    UserService,
+    AuthGuard,
+    UnsavedChangesGuard,
+    UserResolver,
+    CustomPreloadingStrategy
+  ]
+}).catch(err => console.error(err));
