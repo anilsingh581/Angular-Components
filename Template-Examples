@@ -1,0 +1,764 @@
+//Example 1: Simple Component Template
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Example Component
+@Component({
+  selector: 'app-example',
+  standalone: true,
+  template: `<h1>Hello, {{ name }}!</h1>`
+})
+class ExampleComponent {
+  name = 'Angular';
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ExampleComponent],
+  template: `
+    <app-example></app-example>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+//Example 2: Template Expression
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Product Component
+@Component({
+  selector: 'app-product',
+  standalone: true,
+  template: `
+    <h1>Product Details</h1>
+    <p>Price per unit: ${{ price }}</p>
+    <p>Quantity: {{ quantity }}</p>
+    <p>The total price is: {{ price * quantity }}</p>
+  `
+})
+class ProductComponent {
+  price = 10.99;
+  quantity = 3;
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ProductComponent],
+  template: `
+    <app-product></app-product>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 3: Template Reference Variable
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// User Component
+@Component({
+  selector: 'app-user',
+  standalone: true,
+  template: `
+    <h1>Username Logger</h1>
+    <input #username type="text" placeholder="Enter username">
+    <button (click)="log(username.value)">Log Username</button>
+  `
+})
+class UserComponent {
+  log(value: string) {
+    console.log('Username entered:', value);
+  }
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [UserComponent],
+  template: `
+    <app-user></app-user>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 4: *ngIf Conditional Rendering
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Login Component
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  template: `
+    <h1>Login Status</h1>
+    <div *ngIf="isLoggedIn">Welcome back!</div>
+    <div *ngIf="!isLoggedIn">Please log in</div>
+    <button (click)="toggleLogin()">
+      {{ isLoggedIn ? 'Logout' : 'Login' }}
+    </button>
+  `
+})
+class LoginComponent {
+  isLoggedIn = false;
+
+  toggleLogin() {
+    this.isLoggedIn = !this.isLoggedIn;
+  }
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [LoginComponent],
+  template: `
+    <app-login></app-login>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 5: *ngFor Loop
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// List Component
+@Component({
+  selector: 'app-list',
+  standalone: true,
+  template: `
+    <h1>Shopping List</h1>
+    <ul>
+      <li *ngFor="let item of items">{{ item }}</li>
+    </ul>
+    <input #newItem type="text" placeholder="Add item">
+    <button (click)="addItem(newItem.value); newItem.value=''">Add</button>
+  `
+})
+class ListComponent {
+  items = ['Apples', 'Bananas', 'Oranges'];
+
+  addItem(newItem: string) {
+    if (newItem.trim()) {
+      this.items.push(newItem.trim());
+    }
+  }
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ListComponent],
+  template: `
+    <app-list></app-list>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 6: *ngSwitch Example
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Status Component
+@Component({
+  selector: 'app-status',
+  standalone: true,
+  template: `
+    <h1>User Status</h1>
+    <div [ngSwitch]="status">
+      <p *ngSwitchCase="'active'">User is Active</p>
+      <p *ngSwitchCase="'inactive'">User is Inactive</p>
+      <p *ngSwitchDefault>Status Unknown</p>
+    </div>
+    <button (click)="setStatus('active')">Set Active</button>
+    <button (click)="setStatus('inactive')">Set Inactive</button>
+    <button (click)="setStatus('pending')">Set Unknown</button>
+  `
+})
+class StatusComponent {
+  status: string = 'pending';
+
+  setStatus(newStatus: string) {
+    this.status = newStatus;
+  }
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [StatusComponent],
+  template: `
+    <app-status></app-status>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 7: Property Binding
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Profile Component
+@Component({
+  selector: 'app-profile',
+  standalone: true,
+  template: `
+    <h1>User Profile</h1>
+    <img [src]="imageUrl" alt="Profile Picture" width="200">
+    <br>
+    <button (click)="changeImage()">Change Image</button>
+  `
+})
+class ProfileComponent {
+  imageUrl: string = 'https://code-sample.com/200x200?text=Profile+1';
+
+  changeImage() {
+    // Toggle between two different images
+    this.imageUrl = this.imageUrl.includes('Profile+1') 
+      ? 'https://code-sample.com/200x200?text=Profile+2'
+      : 'https://code-sample.com/200x200?text=Profile+1';
+  }
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [ProfileComponent],
+  template: `
+    <app-profile></app-profile>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 8: Event Binding
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Greeting Component
+@Component({
+  selector: 'app-greeting',
+  standalone: true,
+  template: `
+    <h1>Greeting App</h1>
+    <button (click)="sayHello()">Click Me</button>
+    <p>{{ message }}</p>
+  `
+})
+class GreetingComponent {
+  message: string = '';
+
+  sayHello() {
+    this.message = 'Hello! You clicked the button!';
+  }
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [GreetingComponent],
+  template: `
+    <app-greeting></app-greeting>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 9: Two-Way Data Binding
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { FormsModule } from '@angular/forms';
+import { provideAnimations } from '@angular/platform-browser/animations';
+
+// Name Component
+@Component({
+  selector: 'app-name',
+  standalone: true,
+  imports: [FormsModule],  // Required for ngModel
+  template: `
+    <h1>Name Input</h1>
+    <input [(ngModel)]="name" placeholder="Enter name">
+    <p>Your name is: {{ name }}</p>
+  `
+})
+class NameComponent {
+  name: string = '';
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [NameComponent],
+  template: `
+    <app-name></app-name>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application with FormsModule
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideAnimations()
+  ]
+})
+  .catch(err => console.error(err));
+
+
+
+//Example 10: ng-template
+
+// app.ts
+import { Component, TemplateRef, ViewChild } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Message Component
+@Component({
+  selector: 'app-message',
+  standalone: true,
+  template: `
+    <h1>Template Demo</h1>
+    
+    <ng-template #message>
+      <p>This is a reusable template.</p>
+    </ng-template>
+    
+    <button (click)="showMessage(message)">Show</button>
+    
+    <div *ngIf="isVisible">
+      <ng-container [ngTemplateOutlet]="selectedTemplate"></ng-container>
+    </div>
+  `
+})
+class MessageComponent {
+  @ViewChild('message') messageTemplate!: TemplateRef<any>;
+  selectedTemplate: TemplateRef<any> | null = null;
+  isVisible = false;
+
+  showMessage(template: TemplateRef<any>) {
+    this.selectedTemplate = template;
+    this.isVisible = true;
+  }
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [MessageComponent],
+  template: `
+    <app-message></app-message>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 11: Content Projection ()
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Card Component (Child)
+@Component({
+  selector: 'app-card',
+  standalone: true,
+  template: `
+    <div class="card">
+      <ng-content></ng-content>
+    </div>
+  `,
+  styles: [`
+    .card {
+      border: 1px solid #ccc;
+      padding: 20px;
+      margin: 10px;
+      border-radius: 5px;
+    }
+  `]
+})
+class CardComponent {}
+
+// Root App Component (Parent)
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [CardComponent],
+  template: `
+    <h1>Content Projection Demo</h1>
+    <app-card>
+      <p>This content is projected!</p>
+    </app-card>
+    <app-card>
+      <h2>Another Card</h2>
+      <p>With different projected content!</p>
+    </app-card>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 12: Standalone Component
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Hello Component (Standalone)
+@Component({
+  selector: 'app-hello',
+  standalone: true,
+  template: `<h1>Hello, {{ name }}!</h1>`
+})
+class HelloComponent {
+  name = 'Angular';
+}
+
+// Root App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [HelloComponent],  // Import the standalone component
+  template: `
+    <div>
+      <app-hello></app-hello>
+      <p>Welcome to this standalone component demo!</p>
+    </div>
+  `
+})
+class AppComponent {}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 13: Angular SSR Setup
+
+// app.ts
+import { Component, NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { ServerModule } from '@angular/platform-server';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// App Component
+@Component({
+  selector: 'app-root',
+  standalone: false,  // Using NgModule for SSR compatibility
+  template: `
+    <h1>Server-Side Rendering Demo</h1>
+    <p>Rendered at: {{ renderTime }}</p>
+    <p>Environment: {{ isServer ? 'Server' : 'Client' }}</p>
+  `
+})
+export class AppComponent {
+  renderTime = new Date().toLocaleString();
+  isServer = typeof window === 'undefined';  // Detect if running on server
+}
+
+// Client-side Module
+@NgModule({
+  declarations: [AppComponent],
+  imports: [BrowserModule],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+
+// Server-side Module (Example 13)
+@NgModule({
+  declarations: [AppComponent],
+  imports: [
+    ServerModule,
+    BrowserModule.withServerTransition({ appId: 'ssr-demo' })
+  ],
+  bootstrap: [AppComponent]
+})
+export class AppServerModule {}
+
+// Bootstrap for client-side (normally in main.ts)
+if (typeof window !== 'undefined') {
+  bootstrapApplication(AppComponent)
+    .catch(err => console.error(err));
+}
+
+// Export for server-side usage
+export { AppComponent, AppServerModule, AppModule };
+
+
+
+//Example 14: Hydration with Angular 19+
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication, enableHydration } from '@angular/platform-browser';
+
+// App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: `
+    <h1>Hydration Demo</h1>
+    <p>Current count: {{ count }}</p>
+    <button (click)="increment()">Increment</button>
+    <p>Environment: {{ isServer ? 'Server-rendered' : 'Client-hydrated' }}</p>
+  `
+})
+class AppComponent {
+  count = 0;
+  isServer = typeof window === 'undefined';  // Detect server vs client
+
+  increment() {
+    this.count++;
+  }
+}
+
+// Bootstrap the application with hydration
+bootstrapApplication(AppComponent, {
+  providers: [
+    enableHydration()  // Enables hydration for SSR content
+  ]
+})
+  .catch(err => console.error(err));
+
+// Export for potential server-side use
+export { AppComponent };
+
+
+
+//Example 15: Using trackBy in *ngFor
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Item List Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: `
+    <h1>Item List with trackBy</h1>
+    <ul>
+      <li *ngFor="let item of items; trackBy: trackByFn">
+        {{ item.name }} (ID: {{ item.id }})
+      </li>
+    </ul>
+    <button (click)="refreshItems()">Refresh List</button>
+    <button (click)="addItem()">Add Item</button>
+  `
+})
+class AppComponent {
+  items = [
+    { id: 1, name: 'Apple' },
+    { id: 2, name: 'Banana' },
+    { id: 3, name: 'Orange' }
+  ];
+
+  // trackBy function for *ngFor
+  trackByFn(index: number, item: any) {
+    return item.id;  // Use unique ID for tracking
+  }
+
+  refreshItems() {
+    // Simulate refresh by creating new array with same data
+    this.items = [...this.items];
+  }
+
+  addItem() {
+    // Add a new item with unique ID
+    const newId = Math.max(...this.items.map(item => item.id)) + 1;
+    this.items = [...this.items, { id: newId, name: `Item ${newId}` }];
+  }
+}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 16: Avoiding Functions in Templates
+
+// app.ts
+import { Component } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// Total Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: `
+    <h1>Total Calculator</h1>
+    <p>Price: {{ price }}</p>
+    <p>Quantity: {{ quantity }}</p>
+    <p>{{ computedValue }}</p>
+    <button (click)="increaseQuantity()">Add One</button>
+  `
+})
+class AppComponent {
+  price = 10;
+  quantity = 2;
+
+  // Pre-computed property instead of function in template
+  computedValue = this.calculateTotal();
+
+  constructor() {
+    // Initial computation
+    this.updateTotal();
+  }
+
+  calculateTotal() {
+    return `Total: $${(this.price * this.quantity).toFixed(2)}`;
+  }
+
+  increaseQuantity() {
+    this.quantity++;
+    this.updateTotal();  // Update computed value when data changes
+  }
+
+  private updateTotal() {
+    this.computedValue = this.calculateTotal();
+  }
+}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
+
+
+
+//Example 17: Change Detection Optimization
+// app.ts
+import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+
+// User Component (Child)
+@Component({
+  selector: 'app-user',
+  standalone: true,
+  template: `
+    <p>{{ user.name }}</p>
+    <p>Rendered at: {{ renderTime }}</p>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush  // Optimize change detection
+})
+class UserComponent {
+  @Input() user!: { name: string };
+  renderTime = new Date().toLocaleTimeString();  // To show when component renders
+}
+
+// Root App Component (Parent)
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [UserComponent],
+  template: `
+    <h1>Change Detection Demo</h1>
+    <app-user [user]="currentUser"></app-user>
+    <button (click)="updateUser()">Update User</button>
+    <button (click)="noChange()">No Change</button>
+    <p>Parent count: {{ counter }}</p>
+    <button (click)="incrementCounter()">Increment Counter</button>
+  `
+})
+class AppComponent {
+  currentUser = { name: 'Anil Singh' };  // Initial name
+  counter = 0;
+
+  updateUser() {
+    // Create a new object reference to trigger change detection
+    this.currentUser = { name: 'Reena' };  // Changed from Jane to Reena
+  }
+
+  noChange() {
+    // Same reference, won't trigger OnPush component
+    this.currentUser.name = 'Aradhya';  // Changed from Bob to Aradhya
+  }
+
+  incrementCounter() {
+    this.counter++;  // Won't affect UserComponent due to OnPush
+  }
+}
+
+// Bootstrap the application
+bootstrapApplication(AppComponent)
+  .catch(err => console.error(err));
