@@ -69,7 +69,7 @@ export class NavigateComponent {
   constructor(private router: Router) {}
 
   goToAbout() {
-    this.router.navigate(['/about']); // Example 7
+    this.router.navigate(['/about']); 
   }
 }
 
@@ -88,7 +88,7 @@ export class ProductComponent {
 
   constructor(private route: ActivatedRoute) {
     this.route.paramMap.subscribe(params => {
-      this.productId = params.get('id'); // Example 9
+      this.productId = params.get('id'); 
     });
   }
 }
@@ -164,7 +164,7 @@ export class AuthGuard implements CanActivate {
 
   canActivate(): boolean {
     if (this.authService.isLoggedIn()) return true;
-    this.router.navigate(['/login']); // Example 17
+    this.router.navigate(['/login']); 
     return false;
   }
 }
@@ -179,7 +179,7 @@ export interface CanComponentDeactivate {
 @Injectable({ providedIn: 'root' })
 export class UnsavedChangesGuard implements CanDeactivate<CanComponentDeactivate> {
   canDeactivate(component: CanComponentDeactivate): boolean {
-    return component.canDeactivate ? component.canDeactivate() : true; // Example 17
+    return component.canDeactivate ? component.canDeactivate() : true; 
   }
 }
 
@@ -216,7 +216,7 @@ export class UserResolver implements Resolve<any> {
   resolve(route: ActivatedRouteSnapshot): Observable<any> {
     return this.userService.getUser(route.paramMap.get('id')).pipe(
       catchError(() => {
-        this.router.navigate(['/not-found']); // Example 18
+        this.router.navigate(['/not-found']); 
         return of(null);
       })
     );
@@ -259,11 +259,11 @@ export class NavigateExtrasComponent {
   constructor(private router: Router) {}
 
   navigateWithUrl() {
-    this.router.navigateByUrl('/dashboard'); // Example 22
+    this.router.navigateByUrl('/dashboard'); 
   }
 
   navigateWithExtras() {
-    this.router.navigate(['/dashboard'], { skipLocationChange: true }); // Example 22 & 25
+    this.router.navigate(['/dashboard'], { skipLocationChange: true }); 
   }
 }
 
@@ -284,7 +284,7 @@ export class ProductsComponent {
 
   constructor(private route: ActivatedRoute) {
     this.route.queryParams.subscribe(params => {
-      this.category = params['category']; // Example 24
+      this.category = params['category'];
     });
   }
 }
@@ -305,7 +305,7 @@ export class HistoryComponent {
   constructor(private location: Location) {}
 
   goBack() {
-    this.location.back(); // Example 27 & 28
+    this.location.back(); 
   }
 
   goForward() {
@@ -347,7 +347,7 @@ export class DashboardSignalComponent {
 
   constructor(private route: ActivatedRoute) {
     this.route.paramMap.subscribe(params => {
-      this.userId.set(params.get('id')); // Example 37
+      this.userId.set(params.get('id')); 
     });
   }
 }
@@ -366,7 +366,7 @@ export class DashboardSignalComponent {
     trigger('routeAnimations', [
       transition('* <=> *', [
         style({ opacity: 0 }),
-        animate('300ms ease-in', style({ opacity: 1 })) // Example 36
+        animate('300ms ease-in', style({ opacity: 1 })) 
       ])
     ])
   ]
@@ -375,11 +375,12 @@ export class AnimatedComponent {}
 
 
 
-// Example 22: Custom Preloading Strategy
+// Example 22: Custom Preloading Strategy (combination of all above examples)
+
 @Injectable({ providedIn: 'root' })
 export class CustomPreloadingStrategy implements PreloadingStrategy {
   preload(route: Route, load: () => Observable<any>): Observable<any> {
-    return route.data?.['preload'] ? load() : of(null); // Example 41
+    return route.data?.['preload'] ? load() : of(null); 
   }
 }
 
@@ -429,33 +430,33 @@ export class AppComponent {}
 
 // Routes Definition
 const routes: Routes = [
-  { path: 'home', component: HomeComponent }, // Example 2
+  { path: 'home', component: HomeComponent }, // Example 1
   { path: 'about', component: AboutComponent }, // Example 2
-  { path: 'navigate', component: NavigateComponent }, // Example 7
-  { path: 'product/:id', component: ProductComponent }, // Example 8
-  { path: '', redirectTo: '/home', pathMatch: 'full' }, // Example 14
-  { path: 'dashboard', component: DashboardComponent, children: [ // Example 11
+  { path: 'navigate', component: NavigateComponent }, // Example 3
+  { path: 'product/:id', component: ProductComponent }, // Example 4
+  { path: '', redirectTo: '/home', pathMatch: 'full' }, // Example 5
+  { path: 'dashboard', component: DashboardComponent, children: [ // Example 6
     { path: 'stats', component: StatsComponent },
     { path: 'reports', component: ReportsComponent }
   ]},
-  { path: 'users', loadComponent: () => import('./app').then(m => m.UsersComponent) }, // Example 12
-  { path: 'edit-profile', component: EditProfileComponent, canDeactivate: [UnsavedChangesGuard] }, // Example 17
-  { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] }, // Example 20
-  { path: 'login', component: LoginComponent }, // Example 20
-  { path: 'navigate-extras', component: NavigateExtrasComponent }, // Example 21 & 22
-  { path: 'products', component: ProductsComponent }, // Example 23
-  { path: 'history', component: HistoryComponent }, // Example 27 & 28
-  { path: 'nav-links', component: NavLinksComponent }, // Example 29
-  { path: 'dashboard-signal/:id', component: DashboardSignalComponent }, // Example 32
-  { path: 'animated', component: AnimatedComponent }, // Example 36
-  { path: 'profile/:id', component: ProductComponent, resolve: { user: UserResolver } }, // Example 18
-  { path: '**', component: NotFoundComponent } // Example 10 & 42
+  { path: 'users', loadComponent: () => import('./app').then(m => m.UsersComponent) }, 
+  { path: 'edit-profile', component: EditProfileComponent, canDeactivate: [UnsavedChangesGuard] }, 
+  { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] }, 
+  { path: 'login', component: LoginComponent }, 
+  { path: 'navigate-extras', component: NavigateExtrasComponent }, 
+  { path: 'products', component: ProductsComponent }, 
+  { path: 'history', component: HistoryComponent },
+  { path: 'nav-links', component: NavLinksComponent }, 
+  { path: 'dashboard-signal/:id', component: DashboardSignalComponent }, 
+  { path: 'animated', component: AnimatedComponent }, 
+  { path: 'profile/:id', component: ProductComponent, resolve: { user: UserResolver } }, 
+  { path: '**', component: NotFoundComponent } 
 ];
 
 // Bootstrap the Application
 bootstrapApplication(AppComponent, {
   providers: [
-    provideRouter(routes, { preloadingStrategy: CustomPreloadingStrategy }), // Example 41
+    provideRouter(routes, { preloadingStrategy: CustomPreloadingStrategy }), 
     AuthService,
     UserService,
     AuthGuard,
