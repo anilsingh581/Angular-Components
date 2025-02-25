@@ -1,0 +1,291 @@
+// SSR & Hybrid Rendering Examples
+
+// Example 1: Mock Server Setup (Simplified for Demo)
+
+// app.ts
+import { Component, Injectable, NgModule, Inject, PLATFORM_ID } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { RouterModule, Routes, provideRouter, CanActivate } from '@angular/router';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { TransferState, makeStateKey, StateKey } from '@angular/platform-browser';
+import { isPlatformBrowser, isPlatformServer } from '@angular/common';
+import { Observable, of } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { signal } from '@angular/core';
+
+// Mock Server Setup (Simplified for Demo)
+declare const require: any;
+const express = typeof require === 'function' ? require('express') : null;
+const helmet = typeof require === 'function' ? require('helmet') : null;
+
+// Mock Data Keys for TransferState
+const DATA_KEY: StateKey<any> = makeStateKey('serverData');
+const CMS_DATA_KEY: StateKey<any> = makeStateKey('cmsData');
+const USER_DATA_KEY: StateKey<any> = makeStateKey('userData');
+
+// Mock Auth Service
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private loggedIn = false;
+
+  login() { this.loggedIn = true; }
+  logout() { this.loggedIn = false; }
+  isAuthenticated() { return this.loggedIn; }
+}
+
+
+// Example 1: Basic SSR Setup Component
+
+@Component({
+  selector: 'app-home',
+  standalone: true,
+  template: `
+    <h2>Home (SSR Enabled)</h2>
+    <p>Welcome to SSR Demo</p>
+  `
+})
+export class HomeComponent {}
+
+
+
+// Example 2: TransferState Service
+
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  constructor(
+    private http: HttpClient,
+    private transferState: TransferState,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
+
+  getData(): Observable<any> {
+    if (this.transferState.hasKey(DATA_KEY)) {
+      return of(this.transferState.get(DATA_KEY, null)); // Example 14
+    } else {
+      return this.http.get('https://api.example.com/data').pipe(
+        tap(data => {
+          if (isPlatformServer(this.platformId)) {
+            this.transferState.set(DATA_KEY, data);
+          }
+        })
+      );
+    }
+  }
+}
+
+
+
+// Example 3: Authentication with Cookies
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  template: `
+    <h2>Login</h2>
+    <button (click)="login()">Login</button>
+  `
+})
+export class LoginComponent {
+  constructor(
+    private authService: AuthService,
+    private http: HttpClient,
+    private router: Router
+  ) {}
+
+  login() {
+    this.authService.login();
+    this.http.post('/api/auth/login', {}, { withCredentials: true }).subscribe(() => {
+      this.router.navigate(['/dashboard']); // Example 15
+    });
+  }
+}
+
+
+// Example 4: Dynamic API Content with SSR
+
+@Component({
+  selector: 'app-blog',
+  standalone: true,
+  template: `
+    <h2>Blog (Dynamic SSR)</h2>
+    <div *ngFor="let post of posts">{{ post.title }}</div>
+  `
+})
+export class BlogComponent {
+  posts: any[] = [];
+
+  constructor(private dataService: DataService) {
+    this.dataService.getData().subscribe(data => {
+      this.posts = data; // Example 16
+    });
+  }
+}
+
+
+
+// Example 5: Hybrid Rendering with CSR Guard
+
+@Injectable({ providedIn: 'root' })
+export class NoSSRGuard implements CanActivate {
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
+
+  canActivate(): boolean {
+    return isPlatformBrowser(this.platformId); // Example 18
+  }
+}
+
+@Component({
+  selector: 'app-dashboard',
+  standalone: true,
+  template: `
+    <h2>Dashboard (CSR Only)</h2>
+    <p>Interactive Content</p>
+  `
+})
+export class DashboardComponent {
+  ngOnInit() {
+    if (typeof window !== 'undefined') {
+      document.getElementById('demo')?.classList.add('active'); // Example 19
+    }
+  }
+}
+
+
+
+// Example 6: CMS Integration
+
+@Injectable({ providedIn: 'root' })
+export class CmsService {
+  constructor(
+    private transferState: TransferState,
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
+
+  getData(): any {
+    if (this.transferState.hasKey(CMS_DATA_KEY)) {
+      return this.transferState.get(CMS_DATA_KEY, []); // Example 20
+    } else {
+      return this.http.get('https://cms.example.com/posts').pipe(
+        tap(data => {
+          if (isPlatformServer(this.platformId)) {
+            this.transferState.set(CMS_DATA_KEY, data);
+          }
+        })
+      );
+    }
+  }
+}
+
+@Component({
+  selector: 'app-cms-content',
+  standalone: true,
+  template: `
+    <h2>CMS Content</h2>
+    <div *ngFor="let post of posts">{{ post.title }}</div>
+  `
+})
+export class CmsContentComponent {
+  posts: any[] = [];
+
+  constructor(private cmsService: CmsService) {
+    this.cmsService.getData().subscribe(data => {
+      this.posts = data;
+    });
+  }
+}
+
+
+
+// Example 7: Hydration Demo (Simplified)
+
+@Component({
+  selector: 'app-hero',
+  standalone: true,
+  template: `
+    <h2>Hero (Partial Hydration)</h2>
+    <p>{{ title() }}</p>
+    <button (click)="increment()">Increment</button>
+  `
+})
+export class HeroComponent {
+  title = signal('Welcome to Angular SSR'); // Example 21 & 24
+
+  increment() {
+    this.title.update(value => value + '!');
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    RouterModule,
+    HomeComponent,
+    LoginComponent,
+    BlogComponent,
+    DashboardComponent,
+    CmsContentComponent,
+    HeroComponent
+  ],
+  template: `
+    <h1>Angular SSR & Hybrid Rendering Demo</h1>
+    <nav>
+      <a routerLink="/home">Home (SSR)</a>
+      <a routerLink="/login">Login</a>
+      <a routerLink="/blog">Blog (SSR)</a>
+      <a routerLink="/dashboard">Dashboard (CSR)</a>
+      <a routerLink="/cms">CMS (SSR)</a>
+      <a routerLink="/hero">Hero (Hydration)</a>
+    </nav>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {}
+
+// Routes Definition
+const routes: Routes = [
+  { path: 'home', component: HomeComponent },
+  { path: 'login', component: LoginComponent },
+  { path: 'blog', component: BlogComponent },
+  { path: 'dashboard', component: DashboardComponent, canActivate: [NoSSRGuard] },
+  { path: 'cms', component: CmsContentComponent },
+  { path: 'hero', component: HeroComponent },
+  { path: '', redirectTo: '/home', pathMatch: 'full' }
+];
+
+// Mock Server Setup (Simplified - Not Fully Functional in Single File)
+if (typeof express === 'function') {
+  const app = express();
+  const distFolder = 'dist/browser';
+
+  app.use(helmet());
+  app.use(express.static(distFolder, { maxAge: '1y' }));
+
+  app.get('*', (req, res) => {
+    res.render('index.html', { req, providers: [
+      { provide: 'CMS_DATA', useValue: [{ title: 'Mock CMS Post' }] }
+    ]});
+  });
+
+
+
+  // Example 8: Simplified server.ts snippet
+
+  app.set('view engine', 'html');
+  app.set('views', distFolder);
+  app.listen(4000, () => console.log('SSR Server running on http://localhost:4000'));
+}
+
+// Bootstrap the Application
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(routes),
+    { provide: HttpClient, useValue: { get: () => of([{ title: 'Mock Data' }]) } }, // Mock HttpClient
+    DataService,
+    AuthService,
+    CmsService,
+    NoSSRGuard
+  ]
+}).catch(err => console.error(err));
