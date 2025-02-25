@@ -1,0 +1,92 @@
+// Angular Components Git Repository Setup
+
+// Basic Component Example
+// File: src/app/components/hello-world/hello-world.component.ts
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-hello-world',
+  template: `<h1>Hello, {{ name }}!</h1>`,
+  styles: ['h1 { color: blue; }']
+})
+export class HelloWorldComponent {
+  name: string = 'Angular';
+}
+
+// Standalone Component Example
+// File: src/app/components/standalone/standalone.component.ts
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-standalone',
+  standalone: true,
+  template: `<p>This is a standalone component</p>`,
+  styles: ['p { color: green; }']
+})
+export class StandaloneComponent {}
+
+// Lifecycle Hook Example
+// File: src/app/components/lifecycle/lifecycle.component.ts
+import { Component, OnInit, OnDestroy } from '@angular/core';
+
+@Component({
+  selector: 'app-lifecycle',
+  template: `<p>Lifecycle Component Loaded</p>`,
+})
+export class LifecycleComponent implements OnInit, OnDestroy {
+  ngOnInit() { console.log('Component Initialized'); }
+  ngOnDestroy() { console.log('Component Destroyed'); }
+}
+
+// Dependency Injection Example
+// File: src/app/services/logger.service.ts
+import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class LoggerService {
+  log(message: string) { console.log(message); }
+}
+
+// File: src/app/components/logger/logger.component.ts
+import { Component } from '@angular/core';
+import { LoggerService } from '../../services/logger.service';
+
+@Component({
+  selector: 'app-logger',
+  template: `<p>Check the console for logs</p>`
+})
+export class LoggerComponent {
+  constructor(private logger: LoggerService) {
+    this.logger.log('Logger Component Loaded');
+  }
+}
+
+// Lazy Loaded Component
+// File: src/app/components/lazy/lazy.component.ts
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-lazy',
+  template: `<p>Lazy Loaded Component</p>`
+})
+export class LazyComponent {}
+
+// File: src/app/app.module.ts
+import { NgModule } from '@angular/core';
+import { BrowserModule } from '@angular/platform-browser';
+import { AppComponent } from './app.component';
+import { HelloWorldComponent } from './components/hello-world/hello-world.component';
+import { LoggerComponent } from './components/logger/logger.component';
+
+@NgModule({
+  declarations: [AppComponent, HelloWorldComponent, LoggerComponent],
+  imports: [BrowserModule],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+
+// File: src/main.ts
+import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
+import { AppModule } from './app/app.module';
+
+platformBrowserDynamic().bootstrapModule(AppModule);
