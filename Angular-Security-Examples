@@ -1,0 +1,205 @@
+// Angular Security Examples
+
+// Example 1: Mock OAuth Config
+
+// app.ts
+import { Component, Injectable, NgModule, Pipe, PipeTransform } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { RouterModule, Routes, Router, CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
+import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient, HttpHeaders, HttpRequest, HttpHandler, HttpEvent, HttpInterceptor, HTTP_INTERCEPTORS } from '@angular/common/http';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Observable, of } from 'rxjs';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { OAuthService } from 'angular-oauth2-oidc';
+
+// Mock OAuth Config
+const authConfig = {
+  issuer: 'https://mock-issuer.com',
+  clientId: 'mock-client-id',
+  redirectUri: window.location.origin + '/callback',
+  scope: 'openid profile email'
+};
+
+// Mock Services and Interceptors
+
+// Example 2: Authentication Service with JWT and RBAC
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private token = 'mock-jwt-token';
+  private roles = ['user'];
+
+  login() {
+    this.token = 'new-mock-jwt-token'; 
+    localStorage.setItem('auth_token', this.token);
+  }
+
+  hasRole(role: string): boolean {
+    return this.roles.includes(role); 
+  }
+
+  getToken(): string {
+    return this.token;
+  }
+
+  refreshToken(): Observable<string> {
+    return of('new-refresh-token'); 
+  }
+}
+
+
+// Example 3: Role-Based Access Control Guard
+
+@Injectable({ providedIn: 'root' })
+export class RoleGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+    if (this.authService.hasRole('admin')) {
+      return true; 
+    }
+    this.router.navigate(['/access-denied']);
+    return false;
+  }
+}
+
+// Example 4: OAuth and OIDC Integration (Mocked)
+
+@Injectable({ providedIn: 'root' })
+export class OAuthMockService extends OAuthService {
+  configure(config: any) {
+    console.log('Configuring OAuth with:', config); 
+  }
+
+  loadDiscoveryDocumentAndTryLogin() {
+    return Promise.resolve(true).then(() => console.log('Logged in with OIDC')); 
+  }
+
+  initCodeFlow() {
+    console.log('Initiating OAuth Code Flow'); // Example 5
+  }
+}
+
+
+// Example 5: Security Interceptor
+
+@Injectable({ providedIn: 'root' })
+export class AuthInterceptor implements HttpInterceptor {
+  constructor(private authService: AuthService) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = this.authService.getToken();
+    const cloned = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` } 
+    });
+    return next.handle(cloned);
+  }
+}
+
+
+// Example 6: Home Component with Basic Authentication
+
+@Component({
+  selector: 'app-home',
+  template: `
+    <h2>Home</h2>
+    <button (click)="login()">Login</button>
+    <p>{{ token }}</p>
+  `
+})
+export class HomeComponent {
+  token: string;
+
+  constructor(private authService: AuthService, private http: HttpClient) {
+    this.token = this.authService.getToken();
+  }
+
+  login() {
+    this.authService.login();
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${this.authService.getToken()}` 
+    });
+    this.http.get('/api/data', { headers }).subscribe(); 
+  }
+}
+
+
+// Example 7: Sanitization with DomSanitizer
+
+@Component({
+  selector: 'app-sanitize',
+  template: `
+    <h2>Sanitized Content</h2>
+    <div [innerHTML]="sanitizedHtml"></div>
+  `
+})
+export class SanitizeComponent {
+  sanitizedHtml: SafeHtml;
+
+  constructor(private sanitizer: DomSanitizer) {
+    this.sanitizedHtml = this.sanitizer.bypassSecurityTrustHtml('<b>Safe HTML</b>'); // Example 17
+  }
+}
+
+
+// Example 8: AI-Powered CAPTCHA (Mocked)
+
+@Component({
+  selector: 'app-captcha',
+  template: `
+    <h2>AI CAPTCHA</h2>
+    <button (click)="verifyCaptcha()">Verify</button>
+  `
+})
+export class CaptchaComponent {
+  constructor() {}
+
+  verifyCaptcha() {
+    // Mocking reCAPTCHA v3 verification
+    console.log('reCAPTCHA Token: mock-token'); 
+  }
+}
+
+// Root NgModule (AppModule)
+@NgModule({
+  declarations: [
+    HomeComponent,
+    SanitizeComponent,
+    CaptchaComponent
+  ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    HttpClientModule,
+    RouterModule.forRoot([
+      { path: 'home', component: HomeComponent },
+      { path: 'sanitize', component: SanitizeComponent },
+      { path: 'captcha', component: CaptchaComponent },
+      { path: 'admin', component: HomeComponent, canActivate: [RoleGuard] }, 
+      { path: '', redirectTo: '/home', pathMatch: 'full' }
+    ]),
+    TranslateModule.forRoot()
+  ],
+  providers: [
+    AuthService,
+    RoleGuard,
+    OAuthMockService,
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    { provide: HttpClient, useValue: { get: () => of({}) } } // Mock HttpClient
+  ],
+  bootstrap: [HomeComponent]
+})
+export class AppModule {}
+
+// Bootstrap the Application
+bootstrapApplication(HomeComponent, {
+  providers: [
+    provideRouter([]), // Router is already provided by AppModule
+    AuthService,
+    RoleGuard,
+    OAuthMockService,
+    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true }
+  ]
+}).catch(err => console.error(err));
