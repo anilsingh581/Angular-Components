@@ -1,0 +1,157 @@
+// Internationalization (i18n) Examples
+
+// Example 1: Mock Translation Loader Factory for ngx-translate
+
+// app.ts
+import { Component, NgModule, LOCALE_ID, Inject } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { RouterModule, Routes, Router } from '@angular/router';
+import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
+import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { HttpClientModule, HttpClient } from '@angular/common/http';
+import { TranslateHttpLoader } from '@ngx-translate/http-loader';
+
+// Mock Translation Loader Factory for ngx-translate
+export function HttpLoaderFactory(http: HttpClient) {
+  return new TranslateHttpLoader(http, './assets/i18n/', '.json');
+}
+
+
+// Example 2: Basic i18n with Compile-Time Translation
+
+@Component({
+  selector: 'app-home',
+  template: `
+    <h2 i18n="@@homeTitle">Welcome to our Application!</h2>
+    <p>Locale: {{ locale }}</p>
+  `
+})
+export class HomeComponent {
+  constructor(@Inject(LOCALE_ID) public locale: string) {}
+}
+
+
+
+// Example 3: Pluralization
+
+@Component({
+  selector: 'app-plural',
+  template: `
+    <h2>Pluralization</h2>
+    <p i18n="@@message" [i18nPlural]="itemCount">
+      { itemCount, plural,
+        =0 {No items}
+        =1 {One item}
+        other {# items}
+      }
+    </p>
+    <button (click)="changeCount(0)">0</button>
+    <button (click)="changeCount(1)">1</button>
+    <button (click)="changeCount(5)">5</button>
+  `
+})
+export class PluralComponent {
+  itemCount = 1;
+
+  changeCount(count: number) {
+    this.itemCount = count;
+  }
+}
+
+// Example 4: Dynamic Language Switching with ngx-translate
+
+@Component({
+  selector: 'app-dynamic-lang',
+  template: `
+    <h2>Dynamic Language Switch</h2>
+    <p>{{ 'HOME.TITLE' | translate }}</p>
+    <button (click)="switchLanguage('en')">English</button>
+    <button (click)="switchLanguage('fr')">French</button>
+  `
+})
+export class DynamicLangComponent {
+  constructor(private translate: TranslateService) {
+    this.translate.setDefaultLang('en');
+  }
+
+  switchLanguage(language: string) {
+    this.translate.use(language); 
+  }
+}
+
+
+// Example 5: LOCALE_ID and Formatting
+
+@Component({
+  selector: 'app-locale-format',
+  template: `
+    <h2>Locale Formatting</h2>
+    <p>Locale: {{ locale }}</p>
+    <p>{{ amount | currency:'USD' }}</p> 
+    <p>{{ today | date:'fullDate' }}</p>
+    <p>{{ numberValue | number:'1.2-2' }}</p>
+  `
+})
+export class LocaleFormatComponent {
+  amount = 1234.5;
+  today = new Date();
+  numberValue = 12345.678;
+
+  constructor(@Inject(LOCALE_ID) public locale: string) {} 
+}
+
+// Root NgModule (AppModule)
+@NgModule({
+  declarations: [
+    HomeComponent,
+    PluralComponent,
+    DynamicLangComponent,
+    LocaleFormatComponent
+  ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    HttpClientModule,
+    RouterModule.forRoot([
+      { path: 'home', component: HomeComponent },
+      { path: 'plural', component: PluralComponent },
+      { path: 'dynamic', component: DynamicLangComponent },
+      { path: 'locale', component: LocaleFormatComponent },
+      { path: '', redirectTo: '/home', pathMatch: 'full' }
+    ]),
+    TranslateModule.forRoot({
+      loader: {
+        provide: TranslateLoader,
+        useFactory: HttpLoaderFactory,
+        deps: [HttpClient]
+      }
+    })
+  ],
+  providers: [
+    { provide: LOCALE_ID, useValue: 'en-US' } 
+  ],
+  bootstrap: [HomeComponent]
+})
+export class AppModule {}
+
+
+// Bootstrap the Application
+bootstrapApplication(HomeComponent, {
+  providers: [
+    provideRouter([]), // Router is already provided by AppModule
+    { provide: TranslateService, useClass: TranslateService },
+    { provide: HttpClient, useValue: { get: () => of({}) } } // Mock HttpClient
+  ]
+}).catch(err => console.error(err));
+
+
+// Mock Translation Files (Not Executable Here, For Reference)
+// assets/i18n/en.json
+// {
+//   "HOME.TITLE": "Welcome to our Application!"
+// }
+// assets/i18n/fr.json
+// {
+//   "HOME.TITLE": "Bienvenue dans notre application!"
+// }
