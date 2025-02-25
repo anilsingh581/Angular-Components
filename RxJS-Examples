@@ -1,0 +1,443 @@
+// RxJS Examples
+
+//Example 1: Mock Service for Data
+
+// app.ts
+import { Component, Injectable, NgModule, OnInit, OnDestroy } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { RouterModule, Routes, Router } from '@angular/router';
+import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
+import { HttpClientModule, HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, of, Subject, BehaviorSubject, ReplaySubject, AsyncSubject, interval, Subscription, fromEvent, timer, throwError } from 'rxjs';
+import { map, filter, debounceTime, take, takeUntil, combineLatest, forkJoin, merge, concat, zip, throttleTime, distinctUntilChanged, catchError, retryWhen, switchMap, concatMap, mergeMap, tap, exhaustMap, shareReplay } from 'rxjs/operators';
+import { webSocket } from 'rxjs/webSocket';
+
+// Mock Service for Data
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  private dataSource = new BehaviorSubject<string>('Initial Data'); // Example 31
+  data$ = this.dataSource.asObservable();
+
+  constructor(private http: HttpClient) {}
+
+  updateData(newData: string) {
+    this.dataSource.next(newData); // Example 33
+  }
+
+  getData(): Observable<any> {
+    return this.http.get('https://api.example.com/data'); // Example 21
+  }
+
+  submitForm(data: any): Observable<any> {
+    return this.http.post('https://api.example.com/submit', data); // Example 48
+  }
+
+  search(query: string): Observable<any> {
+    return this.http.get(`https://api.example.com/search?q=${query}`); // Example 52
+  }
+}
+
+
+// Example 2: Basic RxJS Observable
+
+@Component({
+  selector: 'app-basic-rxjs',
+  standalone: true,
+  template: `
+    <h2>Basic RxJS Observable</h2>
+    <p>Check console for output</p>
+  `
+})
+export class BasicRxjsComponent implements OnInit {
+  ngOnInit() {
+    const observable = of(1, 2, 3); 
+    observable.subscribe(value => console.log(value)); 
+  }
+}
+
+
+// Example 3: Custom Observable
+
+@Component({
+  selector: 'app-custom-observable',
+  standalone: true,
+  template: `
+    <h2>Custom Observable</h2>
+    <p>Check console for output</p>
+  `
+})
+export class CustomObservableComponent implements OnInit {
+  ngOnInit() {
+    const observable = new Observable(subscriber => {
+      subscriber.next('Hello');
+      subscriber.next('RxJS');
+      subscriber.complete();
+    });
+    observable.subscribe({
+      next: value => console.log(value),
+      complete: () => console.log('Done')
+    });
+  }
+}
+
+
+// Example 4: Observable vs Promise
+
+@Component({
+  selector: 'app-observable-vs-promise',
+  standalone: true,
+  template: `
+    <h2>Observable vs Promise</h2>
+    <p>Check console for output</p>
+  `
+})
+export class ObservableVsPromiseComponent implements OnInit {
+  ngOnInit() {
+    const observable = new Observable(observer => { // Example 3
+      observer.next('Hello');
+      observer.complete();
+    });
+    observable.subscribe(value => console.log(value));
+
+    const promise = new Promise(resolve => resolve('Hello'));
+    promise.then(value => console.log(value));
+  }
+}
+
+
+// Example 5: Subject
+
+@Component({
+  selector: 'app-subject',
+  standalone: true,
+  template: `
+    <h2>Subject</h2>
+    <p>Check console for output</p>
+  `
+})
+export class SubjectComponent implements OnInit {
+  ngOnInit() {
+    const subject = new Subject<string>(); 
+    subject.subscribe(value => console.log('Subscriber 1:', value));
+    subject.subscribe(value => console.log('Subscriber 2:', value));
+    subject.next('Hello');
+  }
+}
+
+
+// Example 6: AsyncSubject
+
+@Component({
+  selector: 'app-async-subject',
+  standalone: true,
+  template: `
+    <h2>AsyncSubject</h2>
+    <p>Check console for output</p>
+  `
+})
+export class AsyncSubjectComponent implements OnInit {
+  ngOnInit() {
+    const asyncSubject = new AsyncSubject<number>(); 
+    asyncSubject.subscribe(value => console.log('Subscriber:', value));
+    asyncSubject.next(1);
+    asyncSubject.next(2);
+    asyncSubject.complete();
+  }
+}
+
+// Example 7: BehaviorSubject for State Management
+
+@Component({
+  selector: 'app-behavior-subject',
+  standalone: true,
+  template: `
+    <h2>BehaviorSubject</h2>
+    <p>State: {{ state }}</p>
+    <button (click)="updateState()">Update State</button>
+  `
+})
+export class BehaviorSubjectComponent implements OnInit {
+  state: string;
+
+  constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    this.dataService.data$.subscribe(data => this.state = data); 
+  }
+
+  updateState() {
+    this.dataService.updateData('Updated State');
+  }
+}
+
+
+// Example 8: ReplaySubject
+
+@Component({
+  selector: 'app-replay-subject',
+  standalone: true,
+  template: `
+    <h2>ReplaySubject</h2>
+    <p>Check console for output</p>
+  `
+})
+export class ReplaySubjectComponent implements OnInit {
+  ngOnInit() {
+    const replaySubject = new ReplaySubject<number>(2); 
+    replaySubject.next(1);
+    replaySubject.next(2);
+    replaySubject.next(3);
+    replaySubject.subscribe(value => console.log(value));
+  }
+}
+
+// Example 9: Operators
+
+@Component({
+  selector: 'app-operators',
+  standalone: true,
+  template: `
+    <h2>Operators</h2>
+    <p>Check console for output</p>
+  `
+})
+export class OperatorsComponent implements OnInit {
+  ngOnInit() {
+    of(1, 2, 3, 4, 5).pipe( 
+      filter(value => value > 2), 
+      map(value => value * 2) 
+    ).subscribe(value => console.log(value));
+  }
+}
+
+
+// Example 10: DebounceTime
+
+@Component({
+  selector: 'app-debounce',
+  standalone: true,
+  template: `
+    <h2>DebounceTime</h2>
+    <input #search placeholder="Type to search" />
+  `
+})
+export class DebounceComponent implements OnInit {
+  ngOnInit() {
+    const searchBox = document.querySelector('#search') as HTMLInputElement;
+    fromEvent(searchBox, 'input').pipe(
+      map((event: any) => event.target.value),
+      debounceTime(300) 
+    ).subscribe(console.log);
+  }
+}
+
+
+// Example 11: TakeUntil
+
+@Component({
+  selector: 'app-take-until',
+  standalone: true,
+  template: `
+    <h2>TakeUntil</h2>
+    <p>Check console for output</p>
+  `
+})
+export class TakeUntilComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>(); 
+
+  ngOnInit() {
+    interval(1000).pipe(
+      takeUntil(this.destroy$) // Example 15
+    ).subscribe(value => console.log(value));
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
+
+
+// Example 12: CombineLatest
+
+@Component({
+  selector: 'app-combine-latest',
+  standalone: true,
+  template: `
+    <h2>CombineLatest</h2>
+    <p>Check console for output</p>
+  `
+})
+export class CombineLatestComponent implements OnInit {
+  ngOnInit() {
+    combineLatest([of(1, 2, 3), of('A', 'B', 'C')]).subscribe(console.log); 
+  }
+}
+
+
+// Example 13: ForkJoin
+
+@Component({
+  selector: 'app-fork-join',
+  standalone: true,
+  template: `
+    <h2>ForkJoin</h2>
+    <p>Check console for output</p>
+  `
+})
+export class ForkJoinComponent implements OnInit {
+  ngOnInit() {
+    forkJoin([of(1, 2), of('A', 'B')]).subscribe(console.log); 
+  }
+}
+
+
+// Example 14: HTTP with RxJS
+
+@Component({
+  selector: 'app-http-rxjs',
+  standalone: true,
+  template: `
+    <h2>HTTP with RxJS</h2>
+    <p>Check console for output</p>
+  `
+})
+export class HttpRxjsComponent implements OnInit {
+  constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    this.dataService.getData().pipe(
+      catchError(error => of(`Error: ${error}`)) 
+    ).subscribe(response => console.log(response));
+  }
+}
+
+// Example 15: Cancel HTTP Request
+
+@Component({
+  selector: 'app-cancel-http',
+  standalone: true,
+  template: `
+    <h2>Cancel HTTP Request</h2>
+    <button (click)="fetchData()">Fetch</button>
+    <button (click)="cancel()">Cancel</button>
+  `
+})
+export class CancelHttpComponent {
+  private subscription: Subscription;
+
+  constructor(private dataService: DataService) {}
+
+  fetchData() {
+    this.subscription = this.dataService.getData().subscribe(console.log); 
+  }
+
+  cancel() {
+    if (this.subscription) this.subscription.unsubscribe(); 
+  }
+}
+
+// Example 16: Exponential Backoff Retry
+
+@Component({
+  selector: 'app-retry-backoff',
+  standalone: true,
+  template: `
+    <h2>Exponential Backoff Retry</h2>
+    <p>Check console for output</p>
+  `
+})
+export class RetryBackoffComponent implements OnInit {
+  constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    this.dataService.getData().pipe(
+      retryWhen(errors => errors.pipe( 
+        delayWhen(() => of(1).pipe(map(n => Math.pow(2, n) * 1000))),
+        take(3)
+      ))
+    ).subscribe(console.log);
+  }
+}
+
+
+// Example 17: API Polling
+
+@Component({
+  selector: 'app-polling',
+  standalone: true,
+  template: `
+    <h2>API Polling</h2>
+    <p>Check console for output</p>
+  `
+})
+export class PollingComponent implements OnInit {
+  constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    interval(5000).pipe(
+      switchMap(() => this.dataService.getData())
+    ).subscribe(console.log);
+  }
+}
+
+// Root NgModule (AppModule)
+@NgModule({
+  declarations: [
+    BasicRxjsComponent,
+    CustomObservableComponent,
+    ObservableVsPromiseComponent,
+    SubjectComponent,
+    AsyncSubjectComponent,
+    BehaviorSubjectComponent,
+    ReplaySubjectComponent,
+    OperatorsComponent,
+    DebounceComponent,
+    TakeUntilComponent,
+    CombineLatestComponent,
+    ForkJoinComponent,
+    HttpRxjsComponent,
+    CancelHttpComponent,
+    RetryBackoffComponent,
+    PollingComponent
+  ],
+  imports: [
+    BrowserModule,
+    CommonModule,
+    HttpClientModule,
+    RouterModule.forRoot([
+      { path: 'basic', component: BasicRxjsComponent },
+      { path: 'custom', component: CustomObservableComponent },
+      { path: 'obs-vs-promise', component: ObservableVsPromiseComponent },
+      { path: 'subject', component: SubjectComponent },
+      { path: 'async-subject', component: AsyncSubjectComponent },
+      { path: 'behavior-subject', component: BehaviorSubjectComponent },
+      { path: 'replay-subject', component: ReplaySubjectComponent },
+      { path: 'operators', component: OperatorsComponent },
+      { path: 'debounce', component: DebounceComponent },
+      { path: 'take-until', component: TakeUntilComponent },
+      { path: 'combine-latest', component: CombineLatestComponent },
+      { path: 'fork-join', component: ForkJoinComponent },
+      { path: 'http-rxjs', component: HttpRxjsComponent },
+      { path: 'cancel-http', component: CancelHttpComponent },
+      { path: 'retry-backoff', component: RetryBackoffComponent },
+      { path: 'polling', component: PollingComponent },
+      { path: '', redirectTo: '/basic', pathMatch: 'full' }
+    ])
+  ],
+  providers: [
+    DataService,
+    { provide: HttpClient, useValue: { get: () => of({}), post: () => of({}) } } // Mock HttpClient
+  ],
+  bootstrap: [BasicRxjsComponent]
+})
+export class AppModule {}
+
+// Bootstrap the Application
+bootstrapApplication(BasicRxjsComponent, {
+  providers: [
+    provideRouter([]), // Router is already provided by AppModule
+    DataService
+  ]
+}).catch(err => console.error(err));
