@@ -1,0 +1,197 @@
+// NgModules Examples
+
+// Example 1: Mock Environment Config
+
+// app.ts
+import { Component, Injectable, NgModule, Directive, Pipe, PipeTransform } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { RouterModule, Routes, Router } from '@angular/router';
+import { BrowserModule } from '@angular/platform-browser';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AngularFireModule } from '@angular/fire/compat';
+import { AngularFireAuthModule } from '@angular/fire/compat/auth';
+import { environment } from './environments/environment'; // Mock environment
+
+// Mock Environment Config
+const environment = {
+  firebaseConfig: {
+    apiKey: "mock-api-key",
+    authDomain: "mock-auth-domain",
+    projectId: "mock-project-id",
+    storageBucket: "mock-storage-bucket",
+    messagingSenderId: "mock-sender-id",
+    appId: "mock-app-id"
+  }
+};
+
+
+
+// Example 2: Root Module with Bootstrap
+
+@Component({
+  selector: 'app-root',
+  template: `
+    <h1>Angular NgModules Demo</h1>
+    <nav>
+      <a routerLink="/feature">Feature Module</a>
+      <a routerLink="/shared">Shared Module</a>
+      <a routerLink="/core">Core Module</a>
+      <a routerLink="/lazy">Lazy Module</a>
+    </nav>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {}
+
+
+
+// Example 3: Component for Declarations
+
+@Component({
+  selector: 'app-my-component',
+  template: `<p>My Component</p>`
+})
+export class MyComponent {}
+
+// Example 4: Directive for Declarations
+@Directive({
+  selector: '[appMyDirective]'
+})
+export class MyDirective {}
+
+
+// Example 4: Feature Module
+
+@Component({
+  selector: 'app-feature',
+  template: `
+    <h2>Feature Component</h2>
+    <p>This is a feature module</p>
+  `
+})
+export class FeatureComponent {}
+
+@NgModule({
+  declarations: [FeatureComponent], 
+  imports: [CommonModule],
+})
+export class FeatureModule {}
+
+
+
+// Example 5: Shared Module
+
+@Component({
+  selector: 'app-shared',
+  template: `<h2>Shared Component</h2>`
+})
+export class SharedComponent {}
+
+@Pipe({
+  name: 'sharedPipe'
+})
+export class SharedPipe implements PipeTransform {
+  transform(value: string): string {
+    return value + ' (shared)';
+  }
+}
+
+@NgModule({
+  declarations: [SharedComponent, SharedPipe],
+  imports: [CommonModule],
+  exports: [SharedComponent, SharedPipe]
+})
+export class SharedModule {}
+
+
+// Example 6: Core Module with Singleton Services
+
+@Injectable()
+export class LoggerService {
+  log(message: string) {
+    console.log(message);
+  }
+}
+
+@Injectable()
+export class AuthService {
+  private loggedIn = false;
+
+  login() { this.loggedIn = true; }
+  isAuthenticated() { return this.loggedIn; }
+}
+
+@NgModule({
+  providers: [LoggerService, AuthService], 
+  imports: [CommonModule]
+})
+export class CoreModule {}
+
+
+// Example 7: Lazy-Loaded Module
+
+@Component({
+  selector: 'app-lazy',
+  template: `
+    <h2>Lazy Component</h2>
+    <p>This is a lazy-loaded module</p>
+  `
+})
+export class LazyComponent {}
+
+@NgModule({
+  declarations: [LazyComponent], 
+  imports: [CommonModule]
+})
+export class LazyModule {}
+
+
+
+// Example 8: Sharing Across Modules
+
+@Component({
+  selector: 'app-shared-demo',
+  template: `
+    <h2>Shared Demo</h2>
+    <app-shared></app-shared>
+    <p>{{ 'Hello' | sharedPipe }}</p>
+  `
+})
+export class SharedDemoComponent {}
+
+// Root NgModule (AppModule)
+@NgModule({
+  declarations: [
+    AppComponent,
+    MyComponent,
+    MyDirective,
+    FeatureComponent,
+    SharedDemoComponent
+  ],
+  imports: [
+    BrowserModule, 
+    FormsModule,
+    RouterModule.forRoot([
+      { path: 'feature', component: FeatureComponent },
+      { path: 'shared', component: SharedDemoComponent },
+      { path: 'core', component: AppComponent }, // Using root component for simplicity
+      { path: 'lazy', loadChildren: () => Promise.resolve(LazyModule) } 
+    ]),
+    CoreModule,
+    SharedModule,
+    FeatureModule
+  ],
+  providers: [],
+  bootstrap: [AppComponent]
+})
+export class AppModule {}
+
+// Bootstrap the Application
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter([]), // Router is already provided by AppModule
+    { provide: LoggerService, useClass: LoggerService },
+    { provide: AuthService, useClass: AuthService }
+  ]
+}).catch(err => console.error(err));
