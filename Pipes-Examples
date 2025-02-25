@@ -1,0 +1,348 @@
+// Pipes Examples
+
+//Exaple 1: Uppercase and Lowercase Pipes
+
+// app.ts
+import { Component, Directive, Input, OnChanges, ElementRef, Pipe, PipeTransform, NgModule } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { RouterModule, Routes, provideRouter } from '@angular/router';
+import { Observable, of } from 'rxjs';
+import { CommonModule } from '@angular/common';
+
+// Uppercase and Lowercase Pipes
+@Component({
+  selector: 'app-basic-pipes',
+  standalone: true,
+  template: `
+    <h2>Basic Pipes</h2>
+    <p>{{ 'Hello World' | uppercase }}</p> <!-- Output: HELLO WORLD --> 
+    <p>{{ 'HELLO WORLD' | lowercase }}</p> <!-- Output: hello world --> 
+  `
+})
+export class BasicPipesComponent {}
+
+
+
+// Example 2: Date Pipe
+
+@Component({
+  selector: 'app-date-pipe',
+  standalone: true,
+  template: `
+    <h2>Date Pipe</h2>
+    <p>{{ today | date:'yyyy-MM-dd' }}</p> <!-- Output: 2025-02-25 --> 
+    <p>{{ today | date:'fullDate' }}</p> <!-- Output: Tuesday, February 25, 2025 -->
+    <p>{{ today | date:'short' }}</p> <!-- Output: 2/25/25, 4:41 AM -->
+  `
+})
+export class DatePipeComponent {
+  today = new Date();
+}
+
+
+
+// Example 3: Currency Pipe
+
+@Component({
+  selector: 'app-currency-pipe',
+  standalone: true,
+  template: `
+    <h2>Currency Pipe</h2>
+    <p>{{ 1234.5 | currency:'USD':'symbol':'1.2-2' }}</p> <!-- Output: $1,234.50 --> 
+    <p>{{ 1234.5 | currency:'EUR':'code':'1.0-0' }}</p> <!-- Output: EUR 1,235 -->
+  `
+})
+export class CurrencyPipeComponent {}
+
+
+// Example 4: Slice and JSON Pipes
+
+@Component({
+  selector: 'app-slice-json-pipe',
+  standalone: true,
+  template: `
+    <h2>Slice and JSON Pipes</h2>
+    <p>{{ 'Angular Pipes' | slice:0:7 }}</p> <!-- Output: Angular --> 
+    <p>{{ [1, 2, 3, 4, 5] | slice:1:4 }}</p> <!-- Output: [2, 3, 4] -->
+    <pre>{{ {name: 'John', age: 25} | json }}</pre> <!-- Output: {"name":"John","age":25} -->
+  `
+})
+export class SliceJsonPipeComponent {}
+
+
+
+// Example 5: Chaining Pipes
+
+@Component({
+  selector: 'app-chained-pipes',
+  standalone: true,
+  template: `
+    <h2>Chained Pipes</h2>
+    <p>{{ '2025-02-25' | date:'yyyy-MM-dd' | uppercase }}</p> <!-- Output: 2025-02-25 --> 
+  `
+})
+export class ChainedPipesComponent {}
+
+
+
+// Example 6: Async Pipe
+
+@Component({
+  selector: 'app-async-pipe',
+  standalone: true,
+  template: `
+    <h2>Async Pipe</h2>
+    <p>{{ observableData | async }}</p> 
+    <p>{{ promiseData | async }}</p>
+  `
+})
+export class AsyncPipeComponent {
+  observableData = new Observable((observer) => {
+    setTimeout(() => observer.next('Hello World'), 1000);
+  });
+  promiseData = Promise.resolve('Promise Resolved');
+}
+
+
+// Example 7: Custom Pipe with Arguments
+
+@Pipe({
+  name: 'exclamation',
+  standalone: true
+})
+export class ExclamationPipe implements PipeTransform {
+  transform(value: string, count: number = 1): string {
+    return value + '!'.repeat(count); 
+  }
+}
+
+
+// Example 8: Using Custom Pipe in Template
+
+@Component({
+  selector: 'app-custom-pipe',
+  standalone: true,
+  imports: [ExclamationPipe],
+  template: `
+    <h2>Custom Pipe</h2>
+    <p>{{ 'Angular' | exclamation:2 }}</p> <!-- Output: Angular!! --> 
+  `
+})
+export class CustomPipeComponent {}
+
+
+// Example 9: Transform Array with Custom Pipe
+
+@Pipe({
+  name: 'uppercaseArray',
+  standalone: true
+})
+export class UppercaseArrayPipe implements PipeTransform {
+  transform(value: string[]): string[] {
+    return value.map(item => item.toUpperCase()); 
+  }
+}
+
+
+// Example 10: Filter Array with Custom Pipe
+
+@Pipe({
+  name: 'filterArray',
+  standalone: true
+})
+export class FilterArrayPipe implements PipeTransform {
+  transform(value: any[], searchTerm: string): any[] {
+    return value.filter(item => item.includes(searchTerm)); 
+  }
+}
+
+
+// Example 11: Handling Null/Undefined in Custom Pipe
+
+@Pipe({
+  name: 'safeExclamation',
+  standalone: true
+})
+export class SafeExclamationPipe implements PipeTransform {
+  transform(value: string, count: number = 1): string {
+    if (!value) return ''; // Handle null or undefined input gracefully 
+    return value + '!'.repeat(count);
+  }
+}
+
+
+// Example 12: Using Pipe in Component TS
+
+@Component({
+  selector: 'app-pipe-in-ts',
+  standalone: true,
+  imports: [ExclamationPipe],
+  template: `
+    <h2>Pipe in TS</h2>
+    <p>{{ transformedText }}</p>
+  `
+})
+export class PipeInTsComponent {
+  transformedText: string;
+
+  constructor(private exclamationPipe: ExclamationPipe) {
+    this.transformedText = this.exclamationPipe.transform('Hello', 3); 
+  }
+}
+
+
+// Example 13: Impure Custom Pipe
+
+@Pipe({
+  name: 'random',
+  pure: false,
+  standalone: true
+})
+export class RandomPipe implements PipeTransform {
+  transform(value: any): number {
+    return Math.random(); 
+  }
+}
+
+
+
+// Example 14: Pipe in Directive
+
+@Directive({
+  selector: '[appExclamation]',
+  standalone: true
+})
+export class ExclamationDirective implements OnChanges {
+  @Input() appExclamation: string = '';
+  @Input() exclamationCount: number = 1;
+
+  constructor(private el: ElementRef, private exclamationPipe: ExclamationPipe) {}
+
+  ngOnChanges() {
+    const transformedValue = this.exclamationPipe.transform(this.appExclamation, this.exclamationCount);
+    this.el.nativeElement.textContent = transformedValue; 
+  }
+}
+
+
+
+// Example 15: Optimizing Expensive Computation in Pipe
+
+@Pipe({
+  name: 'expensiveComputation',
+  pure: true,
+  standalone: true
+})
+export class ExpensiveComputationPipe implements PipeTransform {
+  private cache = new Map();
+
+  transform(value: any): any {
+    if (this.cache.has(value)) {
+      return this.cache.get(value); 
+    }
+    const result = this.expensiveComputation(value);
+    this.cache.set(value, result);
+    return result;
+  }
+
+  private expensiveComputation(value: any): any {
+    return value * Math.random(); // Simulate expensive computation
+  }
+}
+
+// Main App Component
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [
+    CommonModule,
+    RouterModule,
+    BasicPipesComponent,
+    DatePipeComponent,
+    CurrencyPipeComponent,
+    SliceJsonPipeComponent,
+    ChainedPipesComponent,
+    AsyncPipeComponent,
+    CustomPipeComponent,
+    UppercaseArrayPipe,
+    FilterArrayPipe,
+    SafeExclamationPipe,
+    PipeInTsComponent,
+    RandomPipe,
+    ExclamationDirective,
+    ExpensiveComputationPipe
+  ],
+  template: `
+    <h1>Angular Pipes Demo</h1>
+    <nav>
+      <a routerLink="/basic">Basic Pipes</a>
+      <a routerLink="/date">Date Pipe</a>
+      <a routerLink="/currency">Currency Pipe</a>
+      <a routerLink="/slice-json">Slice & JSON</a>
+      <a routerLink="/chained">Chained Pipes</a>
+      <a routerLink="/async">Async Pipe</a>
+      <a routerLink="/custom">Custom Pipe</a>
+      <a routerLink="/pipe-in-ts">Pipe in TS</a>
+    </nav>
+    <div>
+      <ul>
+        <li *ngFor="let item of ['apple', 'banana', 'cherry'] | uppercaseArray">{{ item }}</li>
+      </ul>
+      <ul>
+        <li *ngFor="let item of ['apple', 'banana', 'cherry'] | filterArray:'ap'">{{ item }}</li>
+      </ul>
+      <p>{{ null | safeExclamation:2 }}</p>
+      <p>{{ '' | random }}</p>
+      <span appExclamation="Directive" exclamationCount="2"></span>
+      <p>{{ 5 | expensiveComputation }}</p>
+    </div>
+    <router-outlet></router-outlet>
+  `
+})
+export class AppComponent {}
+
+// Routes Definition
+const routes: Routes = [
+  { path: 'basic', component: BasicPipesComponent },
+  { path: 'date', component: DatePipeComponent },
+  { path: 'currency', component: CurrencyPipeComponent },
+  { path: 'slice-json', component: SliceJsonPipeComponent },
+  { path: 'chained', component: ChainedPipesComponent },
+  { path: 'async', component: AsyncPipeComponent },
+  { path: 'custom', component: CustomPipeComponent },
+  { path: 'pipe-in-ts', component: PipeInTsComponent },
+  { path: '', redirectTo: '/basic', pathMatch: 'full' }
+];
+
+// Bootstrap the Application
+bootstrapApplication(AppComponent, {
+  providers: [
+    provideRouter(routes),
+    ExclamationPipe,
+    UppercaseArrayPipe,
+    FilterArrayPipe,
+    SafeExclamationPipe,
+    RandomPipe,
+    ExpensiveComputationPipe
+  ]
+}).catch(err => console.error(err));
+
+
+
+//Test for Custom Pipe (Not Executable in Single File, For Reference)
+
+describe('ExclamationPipe', () => {
+  let pipe: ExclamationPipe;
+
+  beforeEach(() => {
+    pipe = new ExclamationPipe();
+  });
+
+  it('should add exclamation marks to the end of the string', () => {
+    expect(pipe.transform('Hello', 3)).toBe('Hello!!!'); 
+  });
+
+  it('should add one exclamation mark by default', () => {
+    expect(pipe.transform('Hello')).toBe('Hello!');
+  });
+});
