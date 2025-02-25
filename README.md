@@ -2,11 +2,7 @@
 
 This repository contains code examples for the book *Angular Interview Questions & Answers*.
 
-## Chapter 1: Introduction
-- Overview of Angular
-- Sample setup of an Angular application.
-
-## Chapter 2: Components
+## Chapter 1: Components
 - Code examples on creating components.
 - Basic Component Example
 - Standalone Component Example
@@ -17,7 +13,7 @@ This repository contains code examples for the book *Angular Interview Questions
 ## How to Run
 - Clone this repository:
   ```bash
-  git clone [https://github.com/yourusername/angular-interview-examples.git](https://github.com/anilsingh581/Angular-Components.git)
+  git clone [angular-interview-examples](https://github.com/anilsingh581/Angular-Components.git)
   ```
 - Navigate into the folder:
   ```bash
