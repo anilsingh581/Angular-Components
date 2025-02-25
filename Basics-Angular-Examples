@@ -1,0 +1,151 @@
+// Angular Examples Repository
+
+// Example 1. Creating a New Angular Project
+```
+ng new my-angular-app
+```
+
+// Example 2. Simple Angular Component
+```
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  template: `
+    <h1>{{ title }}</h1>
+    <button (click)="changeTitle()">Change Title</button>
+  `,
+  styleUrls: ['./app.component.css']
+})
+export class AppComponent {
+  title = 'Hello, Angular 19!';
+
+  changeTitle() {
+    this.title = 'Title Changed!';
+  }
+}
+```
+
+// Example 3. Standalone Component
+```
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  template: `<h1>Hello Angular!</h1>`
+})
+export class AppComponent {}
+```
+
+// Example 4. Angular Service with Dependency Injection
+```
+import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  getData() {
+    return [1, 2, 3];
+  }
+}
+```
+
+// Example 5. Using the Service in a Component
+```
+import { Component, OnInit } from '@angular/core';
+import { DataService } from './data.service';
+
+@Component({
+  selector: 'app-numbers',
+  template: `<div *ngFor="let num of numbers">{{ num }}</div>`
+})
+export class NumbersComponent implements OnInit {
+  numbers: number[] = [];
+
+  constructor(private dataService: DataService) {}
+
+  ngOnInit() {
+    this.numbers = this.dataService.getData();
+  }
+}
+```
+
+// Example 6. HTTP Client Example
+```
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
+export class DataService {
+  constructor(private http: HttpClient) {}
+
+  fetchData() {
+    return this.http.get('https://api.example.com/data');
+  }
+}
+```
+
+// Example 7. HTTP Interceptor
+```
+import { HttpInterceptor, HttpRequest, HttpHandler } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    const cloned = req.clone({
+      headers: req.headers.set('Authorization', 'Bearer token')
+    });
+    return next.handle(cloned);
+  }
+}
+```
+
+// Example 8. Lazy Loading Feature Module
+```
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
+import { FeatureComponent } from './feature.component';
+
+const routes: Routes = [{ path: '', component: FeatureComponent }];
+
+@NgModule({
+  imports: [RouterModule.forChild(routes)],
+  declarations: [FeatureComponent]
+})
+export class FeatureModule {}
+```
+
+// Example 9. Change Detection with OnPush Strategy
+```
+import { Component, ChangeDetectionStrategy, Input } from '@angular/core';
+
+@Component({
+  selector: 'app-child',
+  template: `<p>{{ data }}</p>`,
+  changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class ChildComponent {
+  @Input() data!: string;
+}
+```
+
+// Example 10. Angular Animations - Fade In Effect
+```
+import { trigger, state, style, transition, animate } from '@angular/animations';
+import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-box',
+  template: `<div [@fadeIn]>Hello</div>`,
+  animations: [
+    trigger('fadeIn', [
+      state('void', style({ opacity: 0 })),
+      transition(':enter', [animate('500ms ease-in', style({ opacity: 1 }))])
+    ])
+  ]
+})
+export class BoxComponent {}
+```
+
+
