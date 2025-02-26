@@ -1,0 +1,392 @@
+// Angular Testing Example
+
+import { Component, Directive, ElementRef, Pipe, PipeTransform, Injectable, OnInit } from '@angular/core';
+import { FormGroup, FormControl, Validators } from '@angular/forms';
+import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler } from '@angular/common/http';
+import { Observable, of } from 'rxjs';
+import { TestBed, ComponentFixture, fakeAsync, tick } from '@angular/core/testing';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { CanActivate } from '@angular/router';
+
+// --- Components ---
+
+@Component({
+  selector: 'app-hello',
+  template: `<h1>{{message}}</h1>`
+})
+export class HelloComponent {
+  message = 'Hello, World!';
+}
+
+@Component({
+  selector: 'app-standalone',
+  standalone: true,
+  template: `<p>Standalone Component</p>`
+})
+export class StandaloneComponent {}
+
+@Component({
+  selector: 'app-my',
+  template: `<p>{{data?.name}}</p>`
+})
+export class MyComponent implements OnInit {
+  data: any;
+  constructor(private service: MyService) {}
+
+  ngOnInit() {
+    this.service.getData().subscribe(data => this.data = data);
+  }
+}
+
+@Component({
+  selector: 'app-my-form',
+  template: `
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+      <input formControlName="name">
+      <div class="error-message" *ngIf="form.invalid">Form is invalid</div>
+      <button type="submit">Submit</button>
+    </form>
+  `
+})
+export class MyFormComponent {
+  form = new FormGroup({
+    name: new FormControl('', Validators.required)
+  });
+  formSubmitted = false;
+
+  onSubmit() {
+    if (this.form.valid) this.formSubmitted = true;
+  }
+}
+
+// --- Services  ---
+
+@Injectable({ providedIn: 'root' })
+export class MyService {
+  constructor(private http: HttpClient) {}
+
+  getData(): Observable<any> {
+    return this.http.get('http://example.com/data');
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  login(): Observable<any> {
+    return of({ token: 'fake-jwt-token' });
+  }
+
+  isAuthenticated(): boolean {
+    return !!localStorage.getItem('token');
+  }
+
+  getCurrentUser() {
+    return { role: 'admin' };
+  }
+}
+
+// --- Pipes  ---
+
+@Pipe({ name: 'myPipe' })
+export class MyPipe implements PipeTransform {
+  transform(value: string): string {
+    return value.toUpperCase();
+  }
+}
+
+// --- Directives  ---
+
+@Directive({ selector: '[appMyDirective]' })
+export class MyDirective {
+  constructor(private el: ElementRef) {}
+
+  ngOnInit() {
+    this.el.nativeElement.style.backgroundColor = 'red';
+  }
+}
+
+// --- Guards  ---
+
+@Injectable({ providedIn: 'root' })
+export class AdminGuard implements CanActivate {
+  constructor(private authService: AuthService) {}
+
+  canActivate(): boolean {
+    const user = this.authService.getCurrentUser();
+    return user.role === 'admin';
+  }
+}
+
+// --- Interceptors  ---
+
+@Injectable()
+export class HttpInterceptorService implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler) {
+    const authReq = req.clone({ setHeaders: { Authorization: 'Bearer token' } });
+    return next.handle(authReq);
+  }
+}
+
+// --- Unit Tests  ---
+
+describe('HelloComponent', () => {
+  let component: HelloComponent;
+  let fixture: ComponentFixture<HelloComponent>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      declarations: [HelloComponent]
+    }).compileComponents();
+  });
+
+  beforeEach(() => {
+    fixture = TestBed.createComponent(HelloComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+  });
+
+  it('should display the message', () => {
+    const compiled = fixture.nativeElement;
+    expect(compiled.querySelector('h1').textContent).toContain('Hello, World!');
+  });
+
+  it('should update the message', () => {
+    component.message = 'New message';
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    expect(compiled.querySelector('h1').textContent).toContain('New message');
+  });
+});
+
+describe('MyService', () => {
+  let service: MyService;
+  let httpMock: HttpTestingController;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [MyService]
+    });
+    service = TestBed.inject(MyService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  it('should fetch data', () => {
+    const mockData = { name: 'Angular' };
+    service.getData().subscribe(data => {
+      expect(data.name).toBe('Angular');
+    });
+    const req = httpMock.expectOne('http://example.com/data');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockData);
+    httpMock.verify();
+  });
+});
+
+describe('MyPipe', () => {
+  const pipe = new MyPipe();
+
+  it('transforms "hello" to "HELLO"', () => {
+    expect(pipe.transform('hello')).toBe('HELLO');
+  });
+});
+
+@Component({ template: `<div appMyDirective></div>` })
+class TestComponent {}
+
+describe('MyDirective', () => {
+  let fixture: ComponentFixture<TestComponent>;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [MyDirective, TestComponent]
+    });
+    fixture = TestBed.createComponent(TestComponent);
+  });
+
+  it('should change background color', () => {
+    fixture.detectChanges();
+    const el = fixture.nativeElement.querySelector('div');
+    expect(el.style.backgroundColor).toBe('red');
+  });
+});
+
+describe('StandaloneComponent', () => {
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [StandaloneComponent]
+    }).compileComponents();
+  });
+
+  it('should create the component', () => {
+    const fixture = TestBed.createComponent(StandaloneComponent);
+    const component = fixture.componentInstance;
+    expect(component).toBeTruthy();
+  });
+});
+
+describe('AuthService', () => {
+  let service: AuthService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({ providers: [AuthService] });
+    service = TestBed.inject(AuthService);
+  });
+
+  it('should store JWT token after successful login', () => {
+    spyOn(service, 'login').and.returnValue(of({ token: 'fake-jwt-token' }));
+    service.login().subscribe(() => {
+      expect(localStorage.getItem('token')).toBe('fake-jwt-token');
+    });
+  });
+});
+
+describe('AdminGuard', () => {
+  let guard: AdminGuard;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      providers: [
+        AdminGuard,
+        { provide: AuthService, useValue: { getCurrentUser: () => ({ role: 'admin' }) } }
+      ]
+    });
+    guard = TestBed.inject(AdminGuard);
+  });
+
+  it('should allow access to admin users only', () => {
+    expect(guard.canActivate()).toBeTrue();
+  });
+});
+
+describe('HttpInterceptorService', () => {
+  let httpMock: HttpTestingController;
+  let httpClient: HttpClient;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [HttpClientTestingModule],
+      providers: [
+        { provide: HTTP_INTERCEPTORS, useClass: HttpInterceptorService, multi: true }
+      ]
+    });
+    httpMock = TestBed.inject(HttpTestingController);
+    httpClient = TestBed.inject(HttpClient);
+  });
+
+  it('should add Authorization header', () => {
+    httpClient.get('http://example.com/data').subscribe();
+    const req = httpMock.expectOne('http://example.com/data');
+    expect(req.request.headers.has('Authorization')).toBeTrue();
+    req.flush({});
+  });
+});
+
+// --- Integration Tests ---
+
+describe('MyComponent', () => {
+  let fixture: ComponentFixture<MyComponent>;
+  let component: MyComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      declarations: [MyComponent],
+      providers: [
+        { provide: MyService, useValue: { getData: () => of({ name: 'Angular' }) } }
+      ]
+    });
+    fixture = TestBed.createComponent(MyComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('should fetch data on init', () => {
+    fixture.detectChanges();
+    expect(component.data.name).toBe('Angular');
+  });
+});
+
+describe('MyFormComponent', () => {
+  let fixture: ComponentFixture<MyFormComponent>;
+  let component: MyFormComponent;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({
+      imports: [ReactiveFormsModule],
+      declarations: [MyFormComponent]
+    });
+    fixture = TestBed.createComponent(MyFormComponent);
+    component = fixture.componentInstance;
+  });
+
+  it('should show error when form is invalid', () => {
+    component.form.controls['name'].setValue('');
+    fixture.detectChanges();
+    expect(component.form.invalid).toBeTrue();
+    const errorMessage = fixture.nativeElement.querySelector('.error-message');
+    expect(errorMessage).toBeTruthy();
+  });
+
+  it('should submit valid form', () => {
+    component.form.controls['name'].setValue('Angular');
+    fixture.detectChanges();
+    expect(component.form.valid).toBeTrue();
+    component.onSubmit();
+    expect(component.formSubmitted).toBeTrue();
+  });
+});
+
+// --- Cypress E2E Tests (Simulated as Comments) ---
+
+/*
+describe('Angular App', () => {
+  it('should load the app and verify title', () => {
+    cy.visit('http://localhost:4200');
+    cy.contains('Welcome to Angular!');
+  });
+});
+
+describe('Async Test', () => {
+  it('should wait for API call to complete', () => {
+    cy.intercept('GET', '/api/data', { fixture: 'data.json' }).as('getData');
+    cy.visit('http://localhost:4200');
+    cy.wait('@getData');
+    cy.get('.data-item').should('have.length', 3);
+  });
+});
+
+class LoginPage {
+  visit() { cy.visit('/login'); }
+  fillUsername(username: string) { cy.get('input[name="username"]').type(username); }
+  fillPassword(password: string) { cy.get('input[name="password"]').type(password); }
+  submit() { cy.get('button[type="submit"]').click(); }
+}
+
+describe('Authentication Flow', () => {
+  const loginPage = new LoginPage();
+
+  it('should redirect to login page when user is not authenticated', () => {
+    cy.visit('http://localhost:4200/dashboard');
+    cy.url().should('include', '/login');
+  });
+
+  it('should allow access to protected routes when authenticated', () => {
+    cy.intercept('GET', '/api/user', { fixture: 'user.json' }).as('getUser');
+    cy.visit('http://localhost:4200/dashboard');
+    cy.wait('@getUser');
+    cy.url().should('not.include', '/login');
+  });
+
+  it('should redirect to dashboard after login', () => {
+    loginPage.visit();
+    loginPage.fillUsername('testuser');
+    loginPage.fillPassword('password');
+    loginPage.submit();
+    cy.url().should('include', '/dashboard');
+  });
+});
+*/
+
+// --- Notes ---
+// Cypress tests are commented out because they require a separate runtime environment.
+// In a real project, these would be in `cypress/e2e/` folder as `.cy.ts` files.
+// Mock data (e.g., `data.json`, `user.json`) would be in `cypress/fixtures/`.
