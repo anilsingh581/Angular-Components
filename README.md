@@ -24,7 +24,7 @@ A curated list of common Angular interview questions with concise answers and ex
 - [Chapter 18: Developer Tools](#chapter-18-developer-tools)
 - [Chapter 19: Angular Best Practices](#chapter-19-angular-best-practices)
 - [Chapter 20: Angular Testing](#chapter-20-angular-testing)
-- [Chapter 21: Angular Material](#chapter-21-angular-material)
+- [Chapter 21: Angular Material](#chapter-21-[angular-material](https://github.com/anilsingh581/Angular-Interview-Questions-Answers-Examples/blob/main/Angular-Material-Example))
 
 ### 1. Core Concepts
 **Q: What is Angular and its key features?**  
