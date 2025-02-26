@@ -1,0 +1,363 @@
+// Angular Material Example
+
+import { Component, Injectable, OnInit, NgModule, Pipe, PipeTransform, Directive, ElementRef, OnDestroy } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatTableModule, MatTableDataSource } from '@angular/material/table';
+import { MatSortModule, MatSort } from '@angular/material/sort';
+import { MatPaginatorModule, MatPaginator } from '@angular/material/paginator';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
+import { MatStepperModule } from '@angular/material/stepper';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { HttpClient, HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
+import { Observable, BehaviorSubject, Subject, of } from 'rxjs';
+import { takeUntil, tap } from 'rxjs/operators';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router, Routes } from '@angular/router';
+import { FormGroup, FormControl, Validators, ReactiveFormsModule } from '@angular/forms';
+import { TestBed, ComponentFixture } from '@angular/core/testing';
+import { MatButtonHarness } from '@angular/material/button/testing';
+import { HarnessLoader } from '@angular/cdk/testing';
+import { TestbedHarnessEnvironment } from '@angular/cdk/testing/testbed';
+
+// --- Components ---
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [MatButtonModule, MatDialogModule],
+  template: `
+    <button mat-button color="primary" (click)="openDialog()">Open Dialog</button>
+    <button mat-button (click)="showSnackBar()">Show Snackbar</button>
+    <button mat-button (click)="checkToken()">Check Token</button>
+  `,
+})
+export class AppComponent {
+  constructor(private dialog: MatDialog, private snackBar: MatSnackBar) {}
+
+  openDialog() {
+    this.dialog.open(DialogComponent);
+  }
+
+  showSnackBar() {
+    this.snackBar.open('Message sent!', 'Close', { duration: 3000, panelClass: ['custom-snackbar'] });
+  }
+
+  checkToken() {
+    this.dialog.open(LoginDialogComponent);
+  }
+}
+
+@Component({
+  selector: 'app-dialog',
+  standalone: true,
+  imports: [MatButtonModule],
+  template: `
+    <h2 mat-dialog-title>Dialog</h2>
+    <button mat-button mat-dialog-close>Close</button>
+  `,
+})
+export class DialogComponent {}
+
+@Component({
+  selector: 'app-table',
+  standalone: true,
+  imports: [MatTableModule, MatSortModule, MatPaginatorModule, MatFormFieldModule, MatInputModule],
+  template: `
+    <mat-form-field>
+      <mat-label>Filter</mat-label>
+      <input matInput (keyup)="applyFilter($event)" placeholder="Ex. Mia">
+    </mat-form-field>
+    <table mat-table [dataSource]="dataSource" matSort>
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Name</th>
+        <td mat-cell *matCellDef="let element">{{element.name}}</td>
+      </ng-container>
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef mat-sort-header>Email</th>
+        <td mat-cell *matCellDef="let element">{{element.email}}</td>
+      </ng-container>
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+  `,
+})
+export class TableComponent implements OnInit {
+  displayedColumns: string[] = ['name', 'email'];
+  dataSource = new MatTableDataSource<User>([
+    { name: 'Mia', email: 'mia@example.com' },
+    { name: 'John', email: 'john@example.com' },
+  ]);
+
+  constructor() {}
+
+  ngOnInit() {
+    this.dataSource.sort = this.sort;
+    this.dataSource.paginator = this.paginator;
+  }
+
+  @ViewChild(MatSort) sort!: MatSort;
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+
+  applyFilter(event: Event) {
+    const filterValue = (event.target as HTMLInputElement).value;
+    this.dataSource.filter = filterValue.trim().toLowerCase();
+  }
+}
+
+interface User {
+  name: string;
+  email: string;
+}
+
+@Component({
+  selector: 'app-drag-drop',
+  standalone: true,
+  imports: [DragDropModule],
+  template: `
+    <div cdkDropList class="example-list" (cdkDropListDropped)="drop($event)">
+      <div class="example-box" *ngFor="let item of items" cdkDrag>{{item}}</div>
+    </div>
+  `,
+})
+export class DragDropComponent {
+  items = ['Item 1', 'Item 2', 'Item 3'];
+
+  drop(event: CdkDragDrop<string[]>) {
+    moveItemInArray(this.items, event.previousIndex, event.currentIndex);
+  }
+}
+
+@Component({
+  selector: 'app-stepper',
+  standalone: true,
+  imports: [MatStepperModule, MatButtonModule],
+  template: `
+    <mat-horizontal-stepper>
+      <mat-step label="Step 1">
+        <p>Step 1 content</p>
+        <button mat-button matStepperNext>Next</button>
+      </mat-step>
+      <mat-step label="Step 2">
+        <p>Step 2 content</p>
+        <button mat-button matStepperPrevious>Back</button>
+        <button mat-button matStepperNext>Next</button>
+      </mat-step>
+      <mat-step label="Step 3">
+        <p>Step 3 content</p>
+        <button mat-button matStepperPrevious>Back</button>
+      </mat-step>
+    </mat-horizontal-stepper>
+  `,
+})
+export class StepperComponent {}
+
+@Component({
+  selector: 'app-responsive',
+  standalone: true,
+  imports: [MatCardModule],
+  template: `<mat-card [ngClass]="{'mobile': isMobile}">Responsive Content</mat-card>`,
+})
+export class ResponsiveComponent implements OnInit {
+  isMobile = false;
+
+  constructor(private breakpointObserver: BreakpointObserver) {}
+
+  ngOnInit() {
+    this.breakpointObserver.observe(['(max-width: 600px)']).subscribe(result => {
+      this.isMobile = result.matches;
+    });
+  }
+}
+
+@Component({
+  selector: 'app-theme-toggle',
+  standalone: true,
+  imports: [MatButtonModule], // Assuming MatSlideToggleModule for real toggle
+  template: `<button mat-button (change)="toggleDarkMode($event)">Dark Mode</button>`,
+})
+export class ThemeToggleComponent {
+  toggleDarkMode(isDark: any) { // Simplified for example
+    document.body.classList.toggle('dark-theme', isDark);
+  }
+}
+
+@Component({
+  selector: 'app-login-dialog',
+  standalone: true,
+  imports: [MatButtonModule, MatDialogModule],
+  template: `<h2 mat-dialog-title>Login Required</h2><button mat-button mat-dialog-close>Close</button>`,
+})
+export class LoginDialogComponent {}
+
+
+
+// --- Services ---
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private isLoggedInSubject = new BehaviorSubject<boolean>(false);
+
+  constructor(private http: HttpClient) {
+    this.isLoggedInSubject.next(!!this.getToken());
+  }
+
+  login(credentials: { username: string; password: string }): Observable<any> {
+    return this.http.post('/api/login', credentials).pipe(
+      tap((response: any) => {
+        this.storeToken(response.token);
+        this.isLoggedInSubject.next(true);
+      })
+    );
+  }
+
+  storeToken(token: string) {
+    localStorage.setItem('token', token);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem('token');
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    this.isLoggedInSubject.next(false);
+  }
+
+  hasRole(role: string): boolean {
+    const token = this.getToken();
+    if (token) {
+      const decoded = JSON.parse(atob(token.split('.')[1]));
+      return decoded.role === role;
+    }
+    return false;
+  }
+
+  get isLoggedIn$() {
+    return this.isLoggedInSubject.asObservable();
+  }
+
+  verifyOTP(otp: string): Observable<any> {
+    return of({ success: true }); // Mock for example
+  }
+}
+
+
+
+// --- Guards ---
+
+@Injectable({ providedIn: 'root' })
+export class AuthGuard implements CanActivate {
+  constructor(private authService: AuthService, private router: Router) {}
+
+  canActivate(next: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
+    const role = next.data['role'];
+    const token = this.authService.getToken();
+    if (token) {
+      const userRole = this.extractRoleFromToken(token);
+      if (!role || userRole === role) return true;
+    }
+    this.router.navigate(['/login']);
+    return false;
+  }
+
+  private extractRoleFromToken(token: string): string {
+    const decodedToken = JSON.parse(atob(token.split('.')[1]));
+    return decodedToken.role;
+  }
+}
+
+
+
+// --- Interceptors ---
+
+@Injectable()
+export class AuthInterceptor implements HttpInterceptor {
+  constructor(private authService: AuthService) {}
+
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const token = this.authService.getToken();
+    if (token) {
+      req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+    }
+    return next.handle(req);
+  }
+}
+
+@Injectable()
+export class CsrfInterceptor implements HttpInterceptor {
+  intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    const csrfToken = 'mock-csrf-token'; // Simulated
+    req = req.clone({ setHeaders: { 'X-CSRF-TOKEN': csrfToken } });
+    return next.handle(req);
+  }
+}
+
+
+
+// --- Lazy Loaded Module (Simulated) ---
+
+@NgModule({
+  imports: [MatButtonModule],
+  declarations: [],
+})
+export class LazyLoadedModule {}
+
+// --- Routing (Simulated) ---
+
+const routes: Routes = [
+  { path: 'lazy-loaded', loadChildren: () => Promise.resolve(LazyLoadedModule) },
+  { path: 'dashboard', component: AppComponent, canActivate: [AuthGuard], data: { role: 'admin' } },
+];
+
+
+
+// --- Tests ---
+
+describe('ButtonTest', () => {
+  let loader: HarnessLoader;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [MatButtonModule],
+    }).compileComponents();
+    loader = TestbedHarnessEnvironment.loader();
+  });
+
+  it('should click button', async () => {
+    const button = await loader.getHarness(MatButtonHarness);
+    await button.click();
+    expect(true).toBe(true); // Placeholder assertion
+  });
+});
+
+
+
+// --- Subscription Management Example ---
+
+@Component({
+  selector: 'app-subscription-example',
+  standalone: true,
+  imports: [],
+  template: `<p>Subscription Example</p>`,
+})
+export class SubscriptionExampleComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
+
+  constructor(private authService: AuthService) {}
+
+  ngOnInit() {
+    this.authService.isLoggedIn$.pipe(takeUntil(this.destroy$)).subscribe(isLoggedIn => {
+      console.log('Logged in:', isLoggedIn);
+    });
+  }
+
+  ngOnDestroy() {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}
